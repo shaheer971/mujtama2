@@ -1,13 +1,15 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 // Create a properly typed wrapper for RPC calls
-// The issue is that supabase.rpc() doesn't match our expected RPCFunction type
-// We need to convert it to the right type using a proper type assertion
+// We need to define a more permissive type for the RPC function
 type RPCFunction = (name: string, params?: Record<string, any>) => Promise<{ data: any; error: any }>;
 
-// Create a properly typed RPC function that matches what we need
+// Create a properly typed RPC function
 const rpc: RPCFunction = (name, params) => {
-  return supabase.rpc(name as any, params as any) as unknown as Promise<{ data: any; error: any }>;
+  // Using type assertions to bypass TypeScript's strict type checking for the Supabase RPC call
+  // This is necessary because the Supabase types are too restrictive for our dynamic RPC usage
+  return supabase.rpc(name, params) as Promise<{ data: any; error: any }>;
 };
 
 // Progress logs RPC functions
