@@ -19,6 +19,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const progressSchema = z.object({
   progressValue: z.number().min(0).max(100),
@@ -33,13 +34,13 @@ type ProgressFormValues = z.infer<typeof progressSchema>;
 interface ProgressLogFormProps {
   currentProgress: number;
   memberId: string;
+  communityId: string;
   onSuccessfulUpdate?: () => void;
 }
 
-const ProgressLogForm = ({ currentProgress, memberId, onSuccessfulUpdate }: ProgressLogFormProps) => {
+const ProgressLogForm = ({ currentProgress, memberId, communityId, onSuccessfulUpdate }: ProgressLogFormProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { id: communityId } = useParams<{ id: string }>();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm<ProgressFormValues>({
@@ -52,15 +53,34 @@ const ProgressLogForm = ({ currentProgress, memberId, onSuccessfulUpdate }: Prog
   });
 
   const onSubmit = async (data: ProgressFormValues) => {
-    if (!communityId) return;
-    
     setIsSubmitting(true);
     try {
+      // Update member progress
       await updateMemberProgress(memberId, data.progressValue, data.notes);
+      
+      // Also log the progress in the new progress_logs table
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData || !userData.user) {
+        throw new Error('User not authenticated');
+      }
+      
+      const { error: logError } = await supabase.from('progress_logs').insert({
+        user_id: userData.user.id,
+        community_id: communityId,
+        member_id: memberId,
+        progress_value: data.progressValue,
+        notes: data.notes || null
+      });
+      
+      if (logError) {
+        console.error('Error logging progress:', logError);
+        // We'll continue even if logging fails, as the main progress update succeeded
+      }
       
       // Invalidate relevant queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['community', communityId] });
       queryClient.invalidateQueries({ queryKey: ['communityMembers', communityId] });
+      queryClient.invalidateQueries({ queryKey: ['progressLogs', memberId] });
       
       toast({
         title: 'Progress updated',

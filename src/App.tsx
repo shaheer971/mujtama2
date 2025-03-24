@@ -22,6 +22,7 @@ import Signup from "./pages/Auth/Signup";
 import ForgotPassword from "./pages/Auth/ForgotPassword";
 import ResetPassword from "./pages/Auth/ResetPassword";
 import AuthGuard from "./components/auth/AuthGuard";
+import InvitationHandler from "./components/community/InvitationHandler";
 
 const queryClient = new QueryClient();
 
@@ -51,6 +52,7 @@ const App = () => (
             <Route path="leaderboard" element={<Leaderboard />} />
             <Route path="notifications" element={<Notifications />} />
             <Route path="payment-methods" element={<PaymentMethods />} />
+            <Route path="invitations/:token" element={<InvitationHandler />} />
           </Route>
         </Route>
         
@@ -58,6 +60,7 @@ const App = () => (
         <Route path="/communities" element={<Navigate to="/dashboard/communities" replace />} />
         <Route path="/communities/:id" element={<Navigate to="/dashboard/communities/:id" replace />} />
         <Route path="/profile" element={<Navigate to="/dashboard/profile" replace />} />
+        <Route path="/invitations/:token" element={<Navigate to="/dashboard/invitations/:token" replace />} />
         
         {/* Catch-all route */}
         <Route path="*" element={<NotFound />} />

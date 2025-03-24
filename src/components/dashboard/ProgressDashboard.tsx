@@ -8,13 +8,17 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { CalendarDays, Target, TrendingUp, Trophy, Clock } from 'lucide-react';
+import { CalendarDays, Target, TrendingUp, Trophy, Clock, History, Flag } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
 import ProgressLogForm from './ProgressLogForm';
+import ProgressHistory from './ProgressHistory';
+import Milestones from '../community/Milestones';
 import { CommunityMember } from '@/types';
+import { useAuth } from '@/lib/auth';
 
 const ProgressDashboard = () => {
   const { id: communityId } = useParams<{ id: string }>();
+  const { user } = useAuth();
   const [showProgressForm, setShowProgressForm] = useState(false);
   
   const { data: community, isLoading: communityLoading } = useQuery({
@@ -61,6 +65,7 @@ const ProgressDashboard = () => {
   const daysElapsed = differenceInDays(new Date(), new Date(community.startDate));
   const totalDuration = differenceInDays(new Date(community.deadline), new Date(community.startDate));
   const timeProgress = Math.min(100, Math.max(0, (daysElapsed / totalDuration) * 100));
+  const isCreator = user?.id === community.creator.id;
   
   const getStatusColor = (status: CommunityMember['status']) => {
     switch (status) {
@@ -75,9 +80,11 @@ const ProgressDashboard = () => {
   return (
     <div className="w-full p-4 space-y-6">
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="update">Update Progress</TabsTrigger>
+          <TabsTrigger value="history">History</TabsTrigger>
+          <TabsTrigger value="milestones">Milestones</TabsTrigger>
         </TabsList>
         
         <TabsContent value="overview" className="space-y-4">
@@ -194,11 +201,27 @@ const ProgressDashboard = () => {
         </TabsContent>
         
         <TabsContent value="update">
-          {membership && (
+          {membership && communityId && (
             <ProgressLogForm 
               currentProgress={membership.progress} 
               memberId={membership.id}
+              communityId={communityId}
               onSuccessfulUpdate={() => setShowProgressForm(false)}
+            />
+          )}
+        </TabsContent>
+        
+        <TabsContent value="history">
+          {membership && (
+            <ProgressHistory memberId={membership.id} />
+          )}
+        </TabsContent>
+        
+        <TabsContent value="milestones">
+          {communityId && (
+            <Milestones 
+              communityId={communityId} 
+              isCreator={isCreator}
             />
           )}
         </TabsContent>

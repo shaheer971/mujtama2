@@ -74,6 +74,45 @@ export const updateUserProfile = async (
   return mapDatabaseProfileToUser(data as DatabaseProfile);
 };
 
+// Wallet Functions
+export const getUserWallet = async (): Promise<any> => {
+  try {
+    const { data: session } = await supabase.auth.getSession();
+    if (!session.session) throw new Error('User not authenticated');
+
+    const { data, error } = await supabase
+      .from('wallets')
+      .select('*')
+      .eq('user_id', session.session.user.id)
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error fetching user wallet:', error);
+    throw error;
+  }
+};
+
+export const getUserTransactions = async (): Promise<any[]> => {
+  try {
+    const { data: session } = await supabase.auth.getSession();
+    if (!session.session) throw new Error('User not authenticated');
+
+    const { data, error } = await supabase
+      .from('wallet_transactions')
+      .select('*')
+      .eq('user_id', session.session.user.id)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error fetching user transactions:', error);
+    throw error;
+  }
+};
+
 // Community Functions
 export const getCommunity = async (id: string): Promise<Community> => {
   try {
@@ -339,9 +378,6 @@ export const updateMemberProgress = async (
 
     if (memberError) throw memberError;
     
-    // We don't have the progress_logs table yet in the schema, so we'll skip this part
-    // When implementing, add a migration to create this table first
-
     return mapDatabaseCommunityMemberToCommunityMember(fullMemberData as DatabaseCommunityMember);
   } catch (error) {
     console.error('Error updating progress:', error);
@@ -349,13 +385,91 @@ export const updateMemberProgress = async (
   }
 };
 
-export const getProgressHistory = async (memberId: string) => {
+export const getProgressLogs = async (memberId: string) => {
   try {
-    // We don't have the progress_logs table yet in the schema
-    // When implementing, add a migration to create this table first
-    return [];
+    const { data, error } = await supabase
+      .from('progress_logs')
+      .select('*')
+      .eq('member_id', memberId)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data;
   } catch (error) {
-    console.error('Error fetching progress history:', error);
+    console.error('Error fetching progress logs:', error);
+    throw error;
+  }
+};
+
+// Milestone functions
+export const getCommunityMilestones = async (communityId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('milestones')
+      .select(`
+        *,
+        creator:created_by (id, full_name, avatar_url),
+        completions:milestone_completions(*)
+      `)
+      .eq('community_id', communityId)
+      .order('target_date', { ascending: true });
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error fetching community milestones:', error);
+    throw error;
+  }
+};
+
+export const createMilestone = async (milestone: {
+  community_id: string;
+  title: string;
+  description?: string;
+  target_date?: Date;
+  weight?: number;
+}) => {
+  try {
+    const user = await getCurrentUser();
+    if (!user) throw new Error('User not authenticated');
+    
+    const { data, error } = await supabase
+      .from('milestones')
+      .insert({
+        ...milestone,
+        created_by: user.id,
+        target_date: milestone.target_date ? milestone.target_date.toISOString() : null,
+      })
+      .select('*')
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error creating milestone:', error);
+    throw error;
+  }
+};
+
+export const completeMilestone = async (milestoneId: string, notes?: string) => {
+  try {
+    const user = await getCurrentUser();
+    if (!user) throw new Error('User not authenticated');
+    
+    const { data, error } = await supabase
+      .from('milestone_completions')
+      .insert({
+        milestone_id: milestoneId,
+        user_id: user.id,
+        notes
+      })
+      .select('*')
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error completing milestone:', error);
     throw error;
   }
 };
@@ -495,4 +609,116 @@ export const getProfileById = async (userId: string) => {
 
 export const updateProfile = async (userId: string, updates: any) => {
   return updateUserProfile(userId, updates);
+};
+
+// Invitation functions
+export const createInvitation = async (communityId: string, email: string) => {
+  try {
+    const user = await getCurrentUser();
+    if (!user) throw new Error('User not authenticated');
+    
+    // Generate a unique token
+    const token = Math.random().toString(36).substring(2, 15) + 
+                 Math.random().toString(36).substring(2, 15);
+    
+    const { data, error } = await supabase
+      .from('invitations')
+      .insert({
+        community_id: communityId,
+        inviter_id: user.id,
+        invitee_email: email,
+        token,
+        updated_at: new Date().toISOString()
+      })
+      .select('*')
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error creating invitation:', error);
+    throw error;
+  }
+};
+
+export const getInvitationByToken = async (token: string) => {
+  try {
+    const { data, error } = await supabase
+      .from('invitations')
+      .select(`
+        *,
+        community:community_id(*),
+        inviter:inviter_id(*)
+      `)
+      .eq('token', token)
+      .single();
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error fetching invitation:', error);
+    throw error;
+  }
+};
+
+export const acceptInvitation = async (token: string) => {
+  try {
+    const user = await getCurrentUser();
+    if (!user) throw new Error('User not authenticated');
+    
+    // First get the invitation
+    const invitation = await getInvitationByToken(token);
+    if (!invitation) throw new Error('Invitation not found');
+    
+    // Update invitation status
+    const { error: updateError } = await supabase
+      .from('invitations')
+      .update({ 
+        status: 'accepted',
+        updated_at: new Date().toISOString()
+      })
+      .eq('token', token);
+    
+    if (updateError) throw updateError;
+    
+    // Add user to community
+    const member = await addCommunityMember(invitation.community_id, user.id);
+    
+    return { success: true, member };
+  } catch (error) {
+    console.error('Error accepting invitation:', error);
+    throw error;
+  }
+};
+
+export const declineInvitation = async (token: string) => {
+  try {
+    const { error } = await supabase
+      .from('invitations')
+      .update({ 
+        status: 'declined',
+        updated_at: new Date().toISOString()
+      })
+      .eq('token', token);
+    
+    if (error) throw error;
+    return { success: true };
+  } catch (error) {
+    console.error('Error declining invitation:', error);
+    throw error;
+  }
+};
+
+// Export the functions
+export { 
+  getUserWallet,
+  getUserTransactions,
+  getProgressLogs,
+  getCommunityMilestones,
+  createMilestone,
+  completeMilestone,
+  createInvitation,
+  getInvitationByToken,
+  acceptInvitation,
+  declineInvitation
 };
