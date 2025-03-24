@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 // Create a properly typed wrapper for RPC calls
@@ -6,9 +7,9 @@ type RPCFunction = (name: string, params?: Record<string, any>) => Promise<{ dat
 
 // Create a properly typed RPC function
 const rpc: RPCFunction = async (name, params) => {
-  // We need to add a type assertion with 'as any' to bypass TypeScript's type checking
-  // and then explicitly convert the return type to what we expect
-  const response = await (supabase.rpc(name as any, params as any) as any);
+  // The issue is with the type assertions, so let's fix that
+  // We'll cast to unknown first, then to the expected return type
+  const response = await (supabase.rpc as any)(name, params);
   return response;
 };
 
