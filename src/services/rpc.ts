@@ -1,9 +1,14 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
-// Type assertion to allow RPC calls with any function name
+// Create a properly typed wrapper for RPC calls
+// The issue is that supabase.rpc() doesn't match our expected RPCFunction type
+// We need to convert it to the right type using a proper type assertion
 type RPCFunction = (name: string, params?: Record<string, any>) => Promise<{ data: any; error: any }>;
-const rpc = supabase.rpc as RPCFunction;
+
+// Create a properly typed RPC function that matches what we need
+const rpc: RPCFunction = (name, params) => {
+  return supabase.rpc(name as any, params as any) as unknown as Promise<{ data: any; error: any }>;
+};
 
 // Progress logs RPC functions
 export const getProgressLogs = async (memberId: string): Promise<any[]> => {
