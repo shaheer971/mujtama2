@@ -11,8 +11,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, meta?: { [key: string]: any }) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
-  // Add resetPassword method to match ForgotPassword component
-  resetPassword?: (email: string) => Promise<{ error: any }>;
+  resetPassword: (email: string) => Promise<{ error: any }>;
 }
 
 const AuthContext = createContext<AuthContextType>({

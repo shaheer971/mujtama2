@@ -11,10 +11,7 @@ import {
   User,
   Notification
 } from "@/types";
-import * as rpc from "./rpc";
-
-// Re-export RPC functions
-export const {
+import {
   getProgressLogs,
   createProgressLog,
   getCommunityMilestones,
@@ -26,7 +23,22 @@ export const {
   declineInvitation,
   getUserWallet,
   getUserTransactions
-} = rpc;
+} from "./rpc";
+
+// Re-export RPC functions
+export {
+  getProgressLogs,
+  createProgressLog,
+  getCommunityMilestones,
+  createMilestone,
+  completeMilestone,
+  createInvitation,
+  getInvitationByToken,
+  acceptInvitation,
+  declineInvitation,
+  getUserWallet,
+  getUserTransactions
+};
 
 // Authentication and User Functions
 export const getCurrentUser = async (): Promise<User | null> => {
@@ -48,7 +60,11 @@ export const getCurrentUser = async (): Promise<User | null> => {
     return null;
   }
 
-  return mapDatabaseProfileToUser(profile as DatabaseProfile);
+  // Add user_metadata from the session to the returned User object
+  return {
+    ...mapDatabaseProfileToUser(profile as DatabaseProfile),
+    user_metadata: session.user.user_metadata
+  };
 };
 
 export const getUserProfile = async (userId: string): Promise<User | null> => {

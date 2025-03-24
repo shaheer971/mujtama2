@@ -4,8 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
-import { useParams } from 'react-router-dom';
-import { updateMemberProgress } from '@/services/api';
+import { updateMemberProgress, createProgressLog } from '@/services/api';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,7 +17,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 
 const progressSchema = z.object({
   progressValue: z.number().min(0).max(100),
@@ -57,23 +55,12 @@ const ProgressLogForm = ({ currentProgress, memberId, communityId, onSuccessfulU
       // Update member progress
       await updateMemberProgress(memberId, data.progressValue, data.notes);
       
-      // Also log the progress in the new progress_logs table using RPC
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData || !userData.user) {
-        throw new Error('User not authenticated');
-      }
-      
-      // Use the RPC function instead of direct table insert
-      const { error: logError } = await supabase.rpc('create_progress_log', {
-        p_member_id: memberId,
-        p_progress_value: data.progressValue,
-        p_notes: data.notes || null
+      // Also log the progress using the RPC function
+      await createProgressLog({
+        memberId,
+        progressValue: data.progressValue,
+        notes: data.notes
       });
-      
-      if (logError) {
-        console.error('Error logging progress:', logError);
-        // We'll continue even if logging fails, as the main progress update succeeded
-      }
       
       // Invalidate relevant queries to refresh data
       queryClient.invalidateQueries({ queryKey: ['community', communityId] });

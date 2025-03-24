@@ -1,10 +1,14 @@
-
 export type User = {
   id: string;
   name: string;
   email: string;
   avatar?: string;
   joinedAt: Date;
+  user_metadata?: {
+    full_name?: string;
+    avatar_url?: string;
+    [key: string]: any;
+  };
 };
 
 export type CommunityVisibility = 'public' | 'private';

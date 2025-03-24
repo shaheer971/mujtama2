@@ -1,10 +1,14 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
+// Type assertion to allow RPC calls with any function name
+type RPCFunction = (name: string, params?: Record<string, any>) => Promise<{ data: any; error: any }>;
+const rpc = supabase.rpc as RPCFunction;
+
 // Progress logs RPC functions
 export const getProgressLogs = async (memberId: string): Promise<any[]> => {
   try {
-    const { data, error } = await supabase.rpc('get_progress_logs', { member_id: memberId });
+    const { data, error } = await rpc('get_progress_logs', { member_id: memberId });
     
     if (error) throw error;
     return data || [];
@@ -20,7 +24,7 @@ export const createProgressLog = async (params: {
   notes?: string | null;
 }): Promise<any> => {
   try {
-    const { data, error } = await supabase.rpc('create_progress_log', {
+    const { data, error } = await rpc('create_progress_log', {
       p_member_id: params.memberId,
       p_progress_value: params.progressValue,
       p_notes: params.notes || null
@@ -37,7 +41,7 @@ export const createProgressLog = async (params: {
 // Milestone RPC functions
 export const getCommunityMilestones = async (communityId: string): Promise<any[]> => {
   try {
-    const { data, error } = await supabase.rpc('get_community_milestones', { community_id: communityId });
+    const { data, error } = await rpc('get_community_milestones', { community_id: communityId });
     
     if (error) throw error;
     return data || [];
@@ -55,7 +59,7 @@ export const createMilestone = async (params: {
   weight?: number;
 }): Promise<any> => {
   try {
-    const { data, error } = await supabase.rpc('create_milestone', {
+    const { data, error } = await rpc('create_milestone', {
       p_community_id: params.community_id,
       p_title: params.title,
       p_description: params.description || null,
@@ -74,7 +78,7 @@ export const createMilestone = async (params: {
 
 export const completeMilestone = async (milestoneId: string, notes?: string): Promise<any> => {
   try {
-    const { data, error } = await supabase.rpc('complete_milestone', {
+    const { data, error } = await rpc('complete_milestone', {
       p_milestone_id: milestoneId,
       p_notes: notes || null
     });
@@ -90,7 +94,7 @@ export const completeMilestone = async (milestoneId: string, notes?: string): Pr
 // Invitation RPC functions
 export const createInvitation = async (communityId: string, email: string): Promise<any> => {
   try {
-    const { data, error } = await supabase.rpc('create_invitation', {
+    const { data, error } = await rpc('create_invitation', {
       p_community_id: communityId,
       p_invitee_email: email
     });
@@ -105,7 +109,7 @@ export const createInvitation = async (communityId: string, email: string): Prom
 
 export const getInvitationByToken = async (token: string): Promise<any> => {
   try {
-    const { data, error } = await supabase.rpc('get_invitation_by_token', {
+    const { data, error } = await rpc('get_invitation_by_token', {
       p_token: token
     });
     
@@ -119,7 +123,7 @@ export const getInvitationByToken = async (token: string): Promise<any> => {
 
 export const acceptInvitation = async (token: string): Promise<any> => {
   try {
-    const { data, error } = await supabase.rpc('accept_invitation', {
+    const { data, error } = await rpc('accept_invitation', {
       p_token: token
     });
     
@@ -133,7 +137,7 @@ export const acceptInvitation = async (token: string): Promise<any> => {
 
 export const declineInvitation = async (token: string): Promise<any> => {
   try {
-    const { data, error } = await supabase.rpc('decline_invitation', {
+    const { data, error } = await rpc('decline_invitation', {
       p_token: token
     });
     
@@ -148,7 +152,7 @@ export const declineInvitation = async (token: string): Promise<any> => {
 // Wallet RPC functions
 export const getUserWallet = async (): Promise<any> => {
   try {
-    const { data, error } = await supabase.rpc('get_user_wallet');
+    const { data, error } = await rpc('get_user_wallet');
     
     if (error) throw error;
     return data;
