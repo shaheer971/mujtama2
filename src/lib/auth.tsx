@@ -1,114 +1,113 @@
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { User } from '@/types';
 import { getCurrentUser } from '@/services/api';
 
 interface AuthContextType {
   user: User | null;
-  loading: boolean;
-  error: Error | null;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, name: string) => Promise<void>;
-  logout: () => Promise<void>;
-  resetPassword: (email: string) => Promise<void>;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, meta?: { [key: string]: any }) => Promise<{ error: any }>;
+  signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  isAuthenticated: false,
+  isLoading: true,
+  signIn: async () => ({ error: null }),
+  signUp: async () => ({ error: null }),
+  signOut: async () => {},
+});
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<Error | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const loadUser = async () => {
+    const checkUser = async () => {
+      setIsLoading(true);
       try {
-        setLoading(true);
         const currentUser = await getCurrentUser();
         setUser(currentUser);
-      } catch (err) {
-        setError(err instanceof Error ? err : new Error('Failed to load user'));
-        console.error("Error loading user:", err);
+      } catch (error) {
+        console.error('Error getting current user:', error);
+        setUser(null);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
-    loadUser();
+    checkUser();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event) => {
+      console.log('Auth state changed:', event);
+      if (event === 'SIGNED_IN') {
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
+      } else if (event === 'SIGNED_OUT') {
+        setUser(null);
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
-  const login = async (email: string, password: string) => {
-    // Mock implementation - will be replaced with real implementation
-    setLoading(true);
+  const signIn = async (email: string, password: string) => {
     try {
-      // Here we'd make the actual login API call
-      console.log("Login with:", email, password);
-      const user = await getCurrentUser();
-      setUser(user);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to login'));
-      throw err;
-    } finally {
-      setLoading(false);
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      return { error };
+    } catch (error) {
+      console.error('Error signing in:', error);
+      return { error };
     }
   };
 
-  const signup = async (email: string, password: string, name: string) => {
-    // Mock implementation - will be replaced with real implementation
-    setLoading(true);
+  const signUp = async (email: string, password: string, meta?: { [key: string]: any }) => {
     try {
-      // Here we'd make the actual signup API call
-      console.log("Signup with:", email, password, name);
-      const user = await getCurrentUser();
-      setUser(user);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to signup'));
-      throw err;
-    } finally {
-      setLoading(false);
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: meta
+        }
+      });
+      return { error };
+    } catch (error) {
+      console.error('Error signing up:', error);
+      return { error };
     }
   };
 
-  const logout = async () => {
-    // Mock implementation - will be replaced with real implementation
-    setLoading(true);
+  const signOut = async () => {
     try {
-      // Here we'd make the actual logout API call
-      console.log("Logging out");
+      await supabase.auth.signOut();
       setUser(null);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to logout'));
-      throw err;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const resetPassword = async (email: string) => {
-    // Mock implementation - will be replaced with real implementation
-    setLoading(true);
-    try {
-      // Here we'd make the actual reset password API call
-      console.log("Reset password for:", email);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to reset password'));
-      throw err;
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error('Error signing out:', error);
     }
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, error, login, signup, logout, resetPassword }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated: !!user,
+        isLoading,
+        signIn,
+        signUp,
+        signOut,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+export const useAuth = () => useContext(AuthContext);
+
+export default AuthContext;

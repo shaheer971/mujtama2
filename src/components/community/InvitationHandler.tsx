@@ -12,6 +12,35 @@ import { format, isAfter } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/lib/auth';
 
+// Define the invitation type to fix TypeScript errors
+interface Invitation {
+  id: string;
+  community_id: string;
+  inviter_id: string;
+  invitee_email: string;
+  status: string;
+  token: string;
+  created_at: string;
+  expires_at: string;
+  updated_at: string;
+  community: {
+    id: string;
+    name: string;
+    description: string;
+    goal: string;
+    staking_amount: number;
+    deadline: string;
+    creator_id: string;
+    status: string;
+  };
+  inviter: {
+    id: string;
+    full_name: string;
+    email: string;
+    avatar_url: string;
+  };
+}
+
 const InvitationHandler = () => {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
@@ -34,7 +63,7 @@ const InvitationHandler = () => {
       });
       
       // Navigate to the community page
-      if (data.member && data.member.communityId) {
+      if (data?.member && data?.member.communityId) {
         navigate(`/dashboard/communities/${data.member.communityId}`);
       } else {
         navigate('/dashboard/communities');
@@ -107,14 +136,16 @@ const InvitationHandler = () => {
     );
   }
   
+  const invitationData = invitation as unknown as Invitation;
+  
   // Check if invitation is expired
-  const isExpired = isAfter(new Date(), new Date(invitation.expires_at));
+  const isExpired = isAfter(new Date(), new Date(invitationData.expires_at));
   
   // Check if invitation status is not pending
-  const isNotPending = invitation.status !== 'pending';
+  const isNotPending = invitationData.status !== 'pending';
   
   // Check if the email matches the current user
-  const isWrongUser = user && user.email !== invitation.invitee_email;
+  const isWrongUser = user && user.email !== invitationData.invitee_email;
   
   return (
     <div className="container max-w-lg mx-auto py-12">
@@ -153,7 +184,7 @@ const InvitationHandler = () => {
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Invitation Already Processed</AlertTitle>
               <AlertDescription>
-                This invitation has already been {invitation.status === 'accepted' ? 'accepted' : 'declined'}.
+                This invitation has already been {invitationData.status === 'accepted' ? 'accepted' : 'declined'}.
               </AlertDescription>
             </Alert>
           )}
@@ -163,41 +194,41 @@ const InvitationHandler = () => {
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Wrong Account</AlertTitle>
               <AlertDescription>
-                This invitation was sent to {invitation.invitee_email}, but you're signed in with a different account.
+                This invitation was sent to {invitationData.invitee_email}, but you're signed in with a different account.
               </AlertDescription>
             </Alert>
           )}
           
           <div className="bg-muted p-5 rounded-lg">
-            <h3 className="text-lg font-semibold mb-2">{invitation.community.name}</h3>
-            <p className="text-muted-foreground mb-4">{invitation.community.description}</p>
+            <h3 className="text-lg font-semibold mb-2">{invitationData.community.name}</h3>
+            <p className="text-muted-foreground mb-4">{invitationData.community.description}</p>
             
             <div className="space-y-3">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Goal:</span>
-                <span>{invitation.community.goal}</span>
+                <span>{invitationData.community.goal}</span>
               </div>
               
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Staking Amount:</span>
-                <span>${invitation.community.staking_amount.toFixed(2)}</span>
+                <span>${invitationData.community.staking_amount.toFixed(2)}</span>
               </div>
               
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Deadline:</span>
-                <span>{format(new Date(invitation.community.deadline), 'PP')}</span>
+                <span>{format(new Date(invitationData.community.deadline), 'PP')}</span>
               </div>
               
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Invited By:</span>
-                <span>{invitation.inviter.full_name}</span>
+                <span>{invitationData.inviter.full_name}</span>
               </div>
               
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Expires:</span>
                 <div className="flex items-center">
                   <Clock className="h-3.5 w-3.5 mr-1 text-muted-foreground" />
-                  {format(new Date(invitation.expires_at), 'PP')}
+                  {format(new Date(invitationData.expires_at), 'PP')}
                 </div>
               </div>
             </div>

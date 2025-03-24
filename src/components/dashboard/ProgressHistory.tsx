@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Calendar, Clock, FileText } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { getProgressLogs } from '@/services/api';
 
 interface ProgressLog {
   id: string;
@@ -26,16 +26,7 @@ interface ProgressHistoryProps {
 const ProgressHistory = ({ memberId }: ProgressHistoryProps) => {
   const { data: logs, isLoading, error } = useQuery({
     queryKey: ['progressLogs', memberId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('progress_logs')
-        .select('*')
-        .eq('member_id', memberId)
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data as ProgressLog[];
-    }
+    queryFn: () => getProgressLogs(memberId),
   });
 
   if (isLoading) {
@@ -74,7 +65,7 @@ const ProgressHistory = ({ memberId }: ProgressHistoryProps) => {
       <CardContent>
         {logs && logs.length > 0 ? (
           <ScrollArea className="h-[300px] pr-4">
-            {logs.map((log, index) => (
+            {logs.map((log: ProgressLog, index: number) => (
               <div key={log.id} className="mb-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center text-sm text-muted-foreground">

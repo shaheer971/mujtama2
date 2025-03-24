@@ -23,49 +23,52 @@ import ForgotPassword from "./pages/Auth/ForgotPassword";
 import ResetPassword from "./pages/Auth/ResetPassword";
 import AuthGuard from "./components/auth/AuthGuard";
 import InvitationHandler from "./components/community/InvitationHandler";
+import { AuthProvider } from "./lib/auth";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        
-        {/* Protected Dashboard routes with shared layout */}
-        <Route element={<AuthGuard redirectTo="/login" />}>
-          <Route path="/dashboard" element={<DashboardLayout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="communities" element={<Communities />} />
-            <Route path="communities/:id" element={<CommunityDetail />} />
-            <Route path="profile" element={<Profile />} />
-            <Route path="settings" element={<Settings />} />
-            <Route path="goals" element={<Goals />} />
-            <Route path="analytics" element={<Analytics />} />
-            <Route path="leaderboard" element={<Leaderboard />} />
-            <Route path="notifications" element={<Notifications />} />
-            <Route path="payment-methods" element={<PaymentMethods />} />
-            <Route path="invitations/:token" element={<InvitationHandler />} />
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <Routes>
+          {/* Public routes */}
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          
+          {/* Protected Dashboard routes with shared layout */}
+          <Route element={<AuthGuard redirectTo="/login" />}>
+            <Route path="/dashboard" element={<DashboardLayout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="communities" element={<Communities />} />
+              <Route path="communities/:id" element={<CommunityDetail />} />
+              <Route path="profile" element={<Profile />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="goals" element={<Goals />} />
+              <Route path="analytics" element={<Analytics />} />
+              <Route path="leaderboard" element={<Leaderboard />} />
+              <Route path="notifications" element={<Notifications />} />
+              <Route path="payment-methods" element={<PaymentMethods />} />
+              <Route path="invitations/:token" element={<InvitationHandler />} />
+            </Route>
           </Route>
-        </Route>
-        
-        {/* Redirects */}
-        <Route path="/communities" element={<Navigate to="/dashboard/communities" replace />} />
-        <Route path="/communities/:id" element={<Navigate to="/dashboard/communities/:id" replace />} />
-        <Route path="/profile" element={<Navigate to="/dashboard/profile" replace />} />
-        <Route path="/invitations/:token" element={<Navigate to="/dashboard/invitations/:token" replace />} />
-        
-        {/* Catch-all route */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </TooltipProvider>
+          
+          {/* Redirects */}
+          <Route path="/communities" element={<Navigate to="/dashboard/communities" replace />} />
+          <Route path="/communities/:id" element={<Navigate to="/dashboard/communities/:id" replace />} />
+          <Route path="/profile" element={<Navigate to="/dashboard/profile" replace />} />
+          <Route path="/invitations/:token" element={<Navigate to="/dashboard/invitations/:token" replace />} />
+          
+          {/* Catch-all route */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
