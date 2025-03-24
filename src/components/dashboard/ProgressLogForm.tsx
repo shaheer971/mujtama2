@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -58,18 +57,17 @@ const ProgressLogForm = ({ currentProgress, memberId, communityId, onSuccessfulU
       // Update member progress
       await updateMemberProgress(memberId, data.progressValue, data.notes);
       
-      // Also log the progress in the new progress_logs table
+      // Also log the progress in the new progress_logs table using RPC
       const { data: userData } = await supabase.auth.getUser();
       if (!userData || !userData.user) {
         throw new Error('User not authenticated');
       }
       
-      const { error: logError } = await supabase.from('progress_logs').insert({
-        user_id: userData.user.id,
-        community_id: communityId,
-        member_id: memberId,
-        progress_value: data.progressValue,
-        notes: data.notes || null
+      // Use the RPC function instead of direct table insert
+      const { error: logError } = await supabase.rpc('create_progress_log', {
+        p_member_id: memberId,
+        p_progress_value: data.progressValue,
+        p_notes: data.notes || null
       });
       
       if (logError) {

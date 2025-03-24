@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -25,7 +24,14 @@ import AuthGuard from "./components/auth/AuthGuard";
 import InvitationHandler from "./components/community/InvitationHandler";
 import { AuthProvider } from "./lib/auth";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -34,14 +40,12 @@ const App = () => (
         <Toaster />
         <Sonner />
         <Routes>
-          {/* Public routes */}
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           
-          {/* Protected Dashboard routes with shared layout */}
           <Route element={<AuthGuard redirectTo="/login" />}>
             <Route path="/dashboard" element={<DashboardLayout />}>
               <Route index element={<Dashboard />} />
@@ -58,13 +62,11 @@ const App = () => (
             </Route>
           </Route>
           
-          {/* Redirects */}
           <Route path="/communities" element={<Navigate to="/dashboard/communities" replace />} />
           <Route path="/communities/:id" element={<Navigate to="/dashboard/communities/:id" replace />} />
           <Route path="/profile" element={<Navigate to="/dashboard/profile" replace />} />
           <Route path="/invitations/:token" element={<Navigate to="/dashboard/invitations/:token" replace />} />
           
-          {/* Catch-all route */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </TooltipProvider>

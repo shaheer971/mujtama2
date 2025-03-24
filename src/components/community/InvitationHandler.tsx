@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
@@ -41,6 +40,15 @@ interface Invitation {
   };
 }
 
+// Define the response type for acceptInvitation
+interface AcceptInvitationResponse {
+  success: boolean;
+  member?: {
+    id: string;
+    communityId: string;
+  };
+}
+
 const InvitationHandler = () => {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
@@ -56,14 +64,14 @@ const InvitationHandler = () => {
   
   const acceptMutation = useMutation({
     mutationFn: () => token ? acceptInvitation(token) : Promise.reject('No token provided'),
-    onSuccess: (data) => {
+    onSuccess: (data: AcceptInvitationResponse) => {
       toast({
         title: 'Invitation accepted',
         description: 'You have successfully joined the community',
       });
       
       // Navigate to the community page
-      if (data?.member && data?.member.communityId) {
+      if (data?.member && data.member.communityId) {
         navigate(`/dashboard/communities/${data.member.communityId}`);
       } else {
         navigate('/dashboard/communities');
@@ -139,13 +147,13 @@ const InvitationHandler = () => {
   const invitationData = invitation as unknown as Invitation;
   
   // Check if invitation is expired
-  const isExpired = isAfter(new Date(), new Date(invitationData.expires_at));
+  const isExpired = isAfter(new Date(), new Date(invitationData?.expires_at || Date.now()));
   
   // Check if invitation status is not pending
-  const isNotPending = invitationData.status !== 'pending';
+  const isNotPending = invitationData?.status !== 'pending';
   
   // Check if the email matches the current user
-  const isWrongUser = user && user.email !== invitationData.invitee_email;
+  const isWrongUser = user && user.email !== invitationData?.invitee_email;
   
   return (
     <div className="container max-w-lg mx-auto py-12">

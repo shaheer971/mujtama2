@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Bell, Menu, Search, User, X, LogOut } from 'lucide-react';
@@ -60,7 +59,6 @@ const Navbar = () => {
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-6">
             {navLinks.map((link) => (
               <Link
@@ -77,7 +75,6 @@ const Navbar = () => {
             ))}
           </nav>
 
-          {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-3">
             <Button variant="ghost" size="icon" className="rounded-full">
               <Search className="h-5 w-5" />
@@ -108,13 +105,13 @@ const Navbar = () => {
                   <DropdownMenuTrigger asChild>
                     <Button variant="secondary" size="sm" className="gap-2 ml-4">
                       <Avatar className="h-6 w-6">
-                        <AvatarImage src={user?.user_metadata?.avatar_url} />
+                        <AvatarImage src={user.avatar} />
                         <AvatarFallback>
-                          {getInitials(user?.user_metadata?.full_name || user?.email || '')}
+                          {getInitials(user.name || user.email || '')}
                         </AvatarFallback>
                       </Avatar>
                       <span className="max-w-[100px] truncate">
-                        {user?.user_metadata?.full_name || user?.email?.split('@')[0]}
+                        {user.name || user.email?.split('@')[0]}
                       </span>
                     </Button>
                   </DropdownMenuTrigger>
@@ -150,7 +147,6 @@ const Navbar = () => {
             ) : null}
           </div>
 
-          {/* Mobile Menu Button */}
           <div className="md:hidden">
             <Button
               variant="ghost"
@@ -164,7 +160,6 @@ const Navbar = () => {
         </div>
       </Container>
 
-      {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="md:hidden py-4 px-4 bg-background border-b animate-fade-in">
           <nav className="flex flex-col space-y-4">

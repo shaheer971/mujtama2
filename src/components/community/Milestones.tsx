@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
@@ -132,6 +131,8 @@ const Milestones = ({ communityId, isCreator }: MilestonesProps) => {
   const getCompletionCount = (milestone: any) => {
     return milestone.completions?.length || 0;
   };
+
+  const milestonesArray = Array.isArray(milestones) ? milestones : [];
 
   if (isLoading) {
     return (
@@ -292,10 +293,10 @@ const Milestones = ({ communityId, isCreator }: MilestonesProps) => {
       </CardHeader>
       
       <CardContent>
-        {milestones && milestones.length > 0 ? (
+        {milestonesArray.length > 0 ? (
           <ScrollArea className="h-[380px] pr-4">
             <div className="space-y-4">
-              {milestones.map((milestone: any, index: number) => {
+              {milestonesArray.map((milestone: any, index: number) => {
                 const isCompleted = isMilestoneCompleted(milestone);
                 const completionCount = getCompletionCount(milestone);
                 
@@ -368,7 +369,7 @@ const Milestones = ({ communityId, isCreator }: MilestonesProps) => {
                       </div>
                     </div>
                     
-                    {index < milestones.length - 1 && <Separator className="mt-4" />}
+                    {index < milestonesArray.length - 1 && <Separator className="mt-4" />}
                   </div>
                 );
               })}

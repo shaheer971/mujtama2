@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import {
   Community,
@@ -12,6 +11,22 @@ import {
   User,
   Notification
 } from "@/types";
+import * as rpc from "./rpc";
+
+// Re-export RPC functions
+export const {
+  getProgressLogs,
+  createProgressLog,
+  getCommunityMilestones,
+  createMilestone,
+  completeMilestone,
+  createInvitation,
+  getInvitationByToken,
+  acceptInvitation,
+  declineInvitation,
+  getUserWallet,
+  getUserTransactions
+} = rpc;
 
 // Authentication and User Functions
 export const getCurrentUser = async (): Promise<User | null> => {
@@ -72,42 +87,6 @@ export const updateUserProfile = async (
   }
 
   return mapDatabaseProfileToUser(data as DatabaseProfile);
-};
-
-// Wallet Functions
-export const getUserWallet = async (): Promise<any> => {
-  try {
-    const { data: session } = await supabase.auth.getSession();
-    if (!session.session) throw new Error('User not authenticated');
-
-    // Using rpc call since we can't directly access the wallets table yet
-    const { data, error } = await supabase.rpc('get_user_wallet');
-    
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Error fetching user wallet:', error);
-    throw error;
-  }
-};
-
-export const getUserTransactions = async (): Promise<any[]> => {
-  try {
-    const { data: session } = await supabase.auth.getSession();
-    if (!session.session) throw new Error('User not authenticated');
-
-    const { data, error } = await supabase
-      .from('wallet_transactions')
-      .select('*')
-      .eq('user_id', session.session.user.id)
-      .order('created_at', { ascending: false });
-
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Error fetching user transactions:', error);
-    throw error;
-  }
 };
 
 // Community Functions
@@ -382,82 +361,6 @@ export const updateMemberProgress = async (
   }
 };
 
-// Progress logs functions
-export const getProgressLogs = async (memberId: string) => {
-  try {
-    // Use rpc call for now until we update the database types
-    const { data, error } = await supabase.rpc('get_progress_logs', { member_id: memberId });
-    
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Error fetching progress logs:', error);
-    throw error;
-  }
-};
-
-// Milestone functions
-export const getCommunityMilestones = async (communityId: string) => {
-  try {
-    // Use rpc call for now until we update the database types
-    const { data, error } = await supabase.rpc('get_community_milestones', { community_id: communityId });
-    
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Error fetching community milestones:', error);
-    throw error;
-  }
-};
-
-export const createMilestone = async (milestone: {
-  community_id: string;
-  title: string;
-  description?: string;
-  target_date?: Date;
-  weight?: number;
-}) => {
-  try {
-    const user = await getCurrentUser();
-    if (!user) throw new Error('User not authenticated');
-    
-    // Use rpc call for now until we update the database types
-    const { data, error } = await supabase.rpc('create_milestone', {
-      p_community_id: milestone.community_id,
-      p_title: milestone.title,
-      p_description: milestone.description || null,
-      p_target_date: milestone.target_date ? milestone.target_date.toISOString() : null,
-      p_weight: milestone.weight || 1,
-      p_created_by: user.id
-    });
-    
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Error creating milestone:', error);
-    throw error;
-  }
-};
-
-export const completeMilestone = async (milestoneId: string, notes?: string) => {
-  try {
-    const user = await getCurrentUser();
-    if (!user) throw new Error('User not authenticated');
-    
-    // Use rpc call for now until we update the database types
-    const { data, error } = await supabase.rpc('complete_milestone', {
-      p_milestone_id: milestoneId,
-      p_notes: notes || null
-    });
-    
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Error completing milestone:', error);
-    throw error;
-  }
-};
-
 // Added functions to match use-queries.ts references
 export const getCommunityById = getCommunity;
 
@@ -593,86 +496,4 @@ export const getProfileById = async (userId: string) => {
 
 export const updateProfile = async (userId: string, updates: any) => {
   return updateUserProfile(userId, updates);
-};
-
-// Invitation functions
-export const createInvitation = async (communityId: string, email: string) => {
-  try {
-    const user = await getCurrentUser();
-    if (!user) throw new Error('User not authenticated');
-    
-    // Use rpc call for now until we update the database types
-    const { data, error } = await supabase.rpc('create_invitation', {
-      p_community_id: communityId,
-      p_invitee_email: email
-    });
-    
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Error creating invitation:', error);
-    throw error;
-  }
-};
-
-export const getInvitationByToken = async (token: string) => {
-  try {
-    // Use rpc call for now until we update the database types
-    const { data, error } = await supabase.rpc('get_invitation_by_token', {
-      p_token: token
-    });
-    
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Error fetching invitation:', error);
-    throw error;
-  }
-};
-
-export const acceptInvitation = async (token: string) => {
-  try {
-    const user = await getCurrentUser();
-    if (!user) throw new Error('User not authenticated');
-    
-    // Use rpc call for now until we update the database types
-    const { data, error } = await supabase.rpc('accept_invitation', {
-      p_token: token
-    });
-    
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Error accepting invitation:', error);
-    throw error;
-  }
-};
-
-export const declineInvitation = async (token: string) => {
-  try {
-    // Use rpc call for now until we update the database types
-    const { data, error } = await supabase.rpc('decline_invitation', {
-      p_token: token
-    });
-    
-    if (error) throw error;
-    return { success: true };
-  } catch (error) {
-    console.error('Error declining invitation:', error);
-    throw error;
-  }
-};
-
-// Export the functions once to avoid duplicates
-export {
-  getProgressLogs,
-  getCommunityMilestones,
-  createMilestone,
-  completeMilestone,
-  createInvitation,
-  getInvitationByToken,
-  acceptInvitation,
-  declineInvitation,
-  getUserWallet,
-  getUserTransactions
 };
