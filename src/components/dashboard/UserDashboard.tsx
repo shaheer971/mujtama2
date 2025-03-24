@@ -11,6 +11,7 @@ import { useUserMemberships } from '@/hooks/use-queries';
 import { Link } from 'react-router-dom';
 import { ProgressLogCard } from '@/components/community/ProgressLogCard';
 import { TrendingUp, Users, Calendar, Clock } from 'lucide-react';
+import { format, isFuture } from 'date-fns';
 
 export const UserDashboard = () => {
   const { user } = useAuth();
@@ -25,6 +26,13 @@ export const UserDashboard = () => {
   const averageProgress = activeMemberships.length > 0
     ? activeMemberships.reduce((sum, m) => sum + m.progress, 0) / activeMemberships.length
     : 0;
+  
+  // Sort active memberships by deadline - closest deadline first
+  const sortedActiveMemberships = [...activeMemberships].sort((a, b) => {
+    const aDeadline = new Date(a.community?.deadline || 0);
+    const bDeadline = new Date(b.community?.deadline || 0);
+    return aDeadline.getTime() - bDeadline.getTime();
+  });
   
   return (
     <div className="space-y-6">
@@ -71,7 +79,7 @@ export const UserDashboard = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>Joined {user.joinedAt ? new Date(user.joinedAt).toLocaleDateString() : 'Recently'}</span>
+                    <span>Joined {user.joinedAt ? format(new Date(user.joinedAt), 'MMM d, yyyy') : 'Recently'}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <TrendingUp className="h-4 w-4 text-muted-foreground" />
@@ -87,9 +95,13 @@ export const UserDashboard = () => {
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map(i => (
-            <Card key={i}>
-              <CardContent className="p-6 h-40 flex items-center justify-center">
-                <p className="text-muted-foreground">Loading...</p>
+            <Card key={i} className="min-h-[200px]">
+              <CardContent className="p-6 h-full flex items-center justify-center">
+                <div className="animate-pulse space-y-4 w-full">
+                  <div className="h-6 bg-muted rounded-md w-3/4 mx-auto"></div>
+                  <div className="h-4 bg-muted rounded-md w-1/2 mx-auto"></div>
+                  <div className="h-8 bg-muted rounded-md w-full"></div>
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -104,7 +116,7 @@ export const UserDashboard = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {activeMemberships.slice(0, 3).map((membership) => (
+            {sortedActiveMemberships.slice(0, 3).map((membership) => (
               <Link key={membership.id} to={`/dashboard/communities/${membership.communityId}`}>
                 <ProgressLogCard 
                   member={membership} 
@@ -114,6 +126,41 @@ export const UserDashboard = () => {
               </Link>
             ))}
           </div>
+          
+          {activeMemberships.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Upcoming Deadlines</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {sortedActiveMemberships
+                    .filter(m => m.community?.deadline && isFuture(new Date(m.community.deadline)))
+                    .slice(0, 3)
+                    .map(membership => (
+                      <div key={membership.id} className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-primary/10 rounded-full">
+                            <Clock className="h-4 w-4 text-primary" />
+                          </div>
+                          <div>
+                            <div className="font-medium">{membership.community?.name}</div>
+                            <div className="text-sm text-muted-foreground">{membership.community?.goal}</div>
+                          </div>
+                        </div>
+                        <div className="text-sm">
+                          {membership.community?.deadline ? 
+                            format(new Date(membership.community.deadline), 'MMM d, yyyy') : 
+                            'No deadline'
+                          }
+                        </div>
+                      </div>
+                    ))
+                  }
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </>
       ) : (
         <Card>

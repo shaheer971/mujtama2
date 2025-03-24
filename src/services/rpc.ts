@@ -7,8 +7,7 @@ type RPCFunction = (name: string, params?: Record<string, any>) => Promise<{ dat
 
 // Create a properly typed RPC function
 const rpc: RPCFunction = async (name, params) => {
-  // The issue is with the type assertions, so let's fix that
-  // We'll cast to unknown first, then to the expected return type
+  // Cast the supabase.rpc function to any to bypass TypeScript's type checking
   const response = await (supabase.rpc as any)(name, params);
   return response;
 };
@@ -166,6 +165,36 @@ export const getUserWallet = async (): Promise<any> => {
     return data;
   } catch (error) {
     console.error('Error fetching user wallet:', error);
+    throw error;
+  }
+};
+
+export const createWalletTransaction = async (params: {
+  amount: number;
+  transactionType: 'deposit' | 'withdrawal' | 'stake' | 'refund' | 'reward';
+  description?: string;
+  communityId?: string;
+}): Promise<any> => {
+  try {
+    // Ensure amount is positive for deposits and negative for withdrawals and stakes
+    let amount = params.amount;
+    if (params.transactionType === 'withdrawal' || params.transactionType === 'stake') {
+      amount = -Math.abs(amount); // Ensure negative
+    } else if (params.transactionType === 'deposit' || params.transactionType === 'refund' || params.transactionType === 'reward') {
+      amount = Math.abs(amount); // Ensure positive
+    }
+
+    const { data, error } = await rpc('create_wallet_transaction', {
+      p_amount: amount,
+      p_transaction_type: params.transactionType,
+      p_description: params.description || null,
+      p_community_id: params.communityId || null
+    });
+    
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error creating wallet transaction:', error);
     throw error;
   }
 };
