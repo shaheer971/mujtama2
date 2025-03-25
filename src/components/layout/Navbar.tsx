@@ -28,15 +28,21 @@ const Navbar = () => {
     { name: 'How It Works', path: '/#how-it-works' },
   ];
 
-  // Add a console log to debug user authentication state
+  // Enhanced debugging to track auth state more clearly
   useEffect(() => {
-    console.log("Auth state in Navbar:", { user, isLoading });
-  }, [user, isLoading]);
+    console.log("Auth state in Navbar:", { 
+      user, 
+      isLoading, 
+      isAuthenticated: !!user,
+      location: location.pathname
+    });
+  }, [user, isLoading, location.pathname]);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   const handleSignOut = async () => {
     await signOut();
+    navigate('/');
   };
 
   const getInitials = (name: string) => {
@@ -53,6 +59,9 @@ const Navbar = () => {
                      location.pathname === '/signup' || 
                      location.pathname === '/forgot-password' ||
                      location.pathname === '/reset-password';
+
+  // Force render of auth state for debugging
+  const authState = !!user ? 'authenticated' : 'unauthenticated';
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
@@ -129,7 +138,7 @@ const Navbar = () => {
                       </span>
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
+                  <DropdownMenuContent align="end" className="z-50 bg-popover">
                     <DropdownMenuLabel>My Account</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
@@ -203,6 +212,15 @@ const Navbar = () => {
             <div className="pt-4 border-t space-y-2">
               {user ? (
                 <>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={user.avatar} />
+                      <AvatarFallback>
+                        {getInitials(user.name || user.email || '')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="font-medium">{user.name || user.email?.split('@')[0]}</span>
+                  </div>
                   <Button className="w-full" asChild onClick={() => setIsMenuOpen(false)}>
                     <Link to="/dashboard">My Dashboard</Link>
                   </Button>
