@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Filter, SlidersHorizontal, CalendarDays, DollarSign, Users, Tag, BookMarkIcon } from 'lucide-react';
+import { Plus, Search, Filter, SlidersHorizontal, CalendarDays, DollarSign, Users, Tag, BookmarkIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
