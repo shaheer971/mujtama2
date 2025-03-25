@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -40,7 +41,73 @@ const CATEGORIES = [
 ];
 
 const mockCommunities: Community[] = [
-  // Mock data remains unchanged
+  {
+    id: '1',
+    name: 'Daily Meditation Group',
+    description: 'Meditate for at least 10 minutes every day for 30 days',
+    goal: 'Meditate 10 minutes daily',
+    deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+    startDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    updatedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+    category: 'health',
+    visibility: 'public',
+    status: 'active',
+    stakingAmount: 25,
+    membersCount: 8,
+    tags: ['health', 'meditation', 'daily'],
+    creator: {
+      id: '1',
+      name: 'John Doe',
+      email: 'john@example.com',
+      joinedAt: new Date(Date.now() - 100 * 24 * 60 * 60 * 1000),
+    }
+  },
+  {
+    id: '2',
+    name: '50K Steps Challenge',
+    description: 'Walk at least 50,000 steps by the end of the week',
+    goal: 'Walk 50,000 steps',
+    goalAmount: 50000,
+    deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+    startDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+    updatedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+    category: 'fitness',
+    visibility: 'public',
+    status: 'active',
+    stakingAmount: 30,
+    membersCount: 12,
+    tags: ['fitness', 'walking', 'steps'],
+    creator: {
+      id: '1',
+      name: 'John Doe',
+      email: 'john@example.com',
+      joinedAt: new Date(Date.now() - 100 * 24 * 60 * 60 * 1000),
+    }
+  },
+  {
+    id: '3',
+    name: 'Learn Spanish',
+    description: 'Study Spanish for 30 minutes every day for 60 days',
+    goal: 'Study Spanish daily',
+    deadline: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000),
+    startDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
+    createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
+    updatedAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
+    category: 'education',
+    visibility: 'public',
+    status: 'active',
+    stakingAmount: 50,
+    membersCount: 20,
+    tags: ['education', 'language', 'spanish'],
+    creator: {
+      id: '2',
+      name: 'Jane Smith',
+      email: 'jane@example.com',
+      joinedAt: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000),
+    }
+  },
 ];
 
 const Communities = () => {
@@ -54,6 +121,15 @@ const Communities = () => {
   const [viewType, setViewType] = useState('grid');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('discover');
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Simulate loading data
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const filteredCommunities = mockCommunities.filter((community) => {
     const matchesSearch = community.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -94,6 +170,29 @@ const Communities = () => {
     });
     setIsCreateModalOpen(false);
   };
+
+  // If loading, show skeletons
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <main className="flex-grow py-8">
+          <Container maxWidth="7xl">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+              <div className="w-1/3 h-10 bg-muted animate-pulse rounded-md"></div>
+              <div className="w-40 h-10 bg-muted animate-pulse rounded-md"></div>
+            </div>
+            <div className="h-12 bg-muted animate-pulse rounded-md mb-6"></div>
+            <div className="h-16 bg-muted animate-pulse rounded-md mb-8"></div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="h-[300px] bg-muted animate-pulse rounded-xl"></div>
+              ))}
+            </div>
+          </Container>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -332,7 +431,7 @@ const Communities = () => {
               <p className="text-muted-foreground mb-6 max-w-md">
                 Explore communities and join ones that align with your goals, or create your own.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button onClick={() => setActiveTab('discover')}>
                   Discover Communities
                 </Button>

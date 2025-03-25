@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Bell, Menu, Search, User, X, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,11 @@ const Navbar = () => {
     { name: 'Communities', path: '/#communities' },
     { name: 'How It Works', path: '/#how-it-works' },
   ];
+
+  // Add a console log to debug user authentication state
+  useEffect(() => {
+    console.log("Auth state in Navbar:", { user, isLoading });
+  }, [user, isLoading]);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -73,6 +79,14 @@ const Navbar = () => {
                 {link.name}
               </Link>
             ))}
+            {user && (
+              <Link
+                to="/dashboard"
+                className="font-medium transition-colors hover:text-primary text-muted-foreground"
+              >
+                Dashboard
+              </Link>
+            )}
           </nav>
 
           <div className="hidden md:flex items-center gap-3">
@@ -177,6 +191,15 @@ const Navbar = () => {
                 {link.name}
               </Link>
             ))}
+            {user && (
+              <Link
+                to="/dashboard"
+                className="py-2 font-medium transition-colors text-muted-foreground"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Dashboard
+              </Link>
+            )}
             <div className="pt-4 border-t space-y-2">
               {user ? (
                 <>
