@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Bell, Menu, Search, User, X, LogOut } from 'lucide-react';
+import { Bell, Menu, Search, X, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Container from '@/components/ui/Container';
 import {
@@ -19,7 +19,7 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, signOut, isLoading } = useAuth();
+  const { user, signOut, isLoading, isAuthenticated } = useAuth();
   
   const navLinks = [
     { name: 'Home', path: '/' },
@@ -28,15 +28,16 @@ const Navbar = () => {
     { name: 'How It Works', path: '/#how-it-works' },
   ];
 
-  // Enhanced debugging to track auth state more clearly
+  // Debug auth state more thoroughly
   useEffect(() => {
-    console.log("Auth state in Navbar:", { 
+    console.log("Auth state in Navbar (detailed):", { 
       user, 
       isLoading, 
-      isAuthenticated: !!user,
+      isAuthenticated,
+      userObject: user ? JSON.stringify(user) : null,
       location: location.pathname
     });
-  }, [user, isLoading, location.pathname]);
+  }, [user, isLoading, isAuthenticated, location.pathname]);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -59,9 +60,6 @@ const Navbar = () => {
                      location.pathname === '/signup' || 
                      location.pathname === '/forgot-password' ||
                      location.pathname === '/reset-password';
-
-  // Force render of auth state for debugging
-  const authState = !!user ? 'authenticated' : 'unauthenticated';
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
@@ -88,7 +86,7 @@ const Navbar = () => {
                 {link.name}
               </Link>
             ))}
-            {user && (
+            {isAuthenticated && (
               <Link
                 to="/dashboard"
                 className="font-medium transition-colors hover:text-primary text-muted-foreground"
@@ -106,7 +104,7 @@ const Navbar = () => {
             
             {isLoading ? (
               <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
-            ) : user ? (
+            ) : isAuthenticated ? (
               <>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -128,13 +126,13 @@ const Navbar = () => {
                   <DropdownMenuTrigger asChild>
                     <Button variant="secondary" size="sm" className="gap-2 ml-4">
                       <Avatar className="h-6 w-6">
-                        <AvatarImage src={user.avatar} />
+                        <AvatarImage src={user?.avatar} />
                         <AvatarFallback>
-                          {getInitials(user.name || user.email || '')}
+                          {getInitials(user?.name || user?.email || '')}
                         </AvatarFallback>
                       </Avatar>
                       <span className="max-w-[100px] truncate">
-                        {user.name || user.email?.split('@')[0]}
+                        {user?.name || user?.email?.split('@')[0] || 'User'}
                       </span>
                     </Button>
                   </DropdownMenuTrigger>
@@ -170,7 +168,18 @@ const Navbar = () => {
             ) : null}
           </div>
 
-          <div className="md:hidden">
+          <div className="md:hidden flex items-center gap-2">
+            {isAuthenticated && !isLoading && (
+              <Button 
+                variant="secondary" 
+                size="sm" 
+                asChild 
+                className="mr-2"
+              >
+                <Link to="/dashboard">Dashboard</Link>
+              </Button>
+            )}
+            
             <Button
               variant="ghost"
               size="icon"
@@ -200,7 +209,7 @@ const Navbar = () => {
                 {link.name}
               </Link>
             ))}
-            {user && (
+            {isAuthenticated && (
               <Link
                 to="/dashboard"
                 className="py-2 font-medium transition-colors text-muted-foreground"
@@ -210,16 +219,16 @@ const Navbar = () => {
               </Link>
             )}
             <div className="pt-4 border-t space-y-2">
-              {user ? (
+              {isAuthenticated ? (
                 <>
                   <div className="flex items-center gap-2 mb-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={user.avatar} />
+                      <AvatarImage src={user?.avatar} />
                       <AvatarFallback>
-                        {getInitials(user.name || user.email || '')}
+                        {getInitials(user?.name || user?.email || '')}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="font-medium">{user.name || user.email?.split('@')[0]}</span>
+                    <span className="font-medium">{user?.name || user?.email?.split('@')[0] || 'User'}</span>
                   </div>
                   <Button className="w-full" asChild onClick={() => setIsMenuOpen(false)}>
                     <Link to="/dashboard">My Dashboard</Link>

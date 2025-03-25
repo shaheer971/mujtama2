@@ -3,6 +3,7 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@/types';
 import { getCurrentUser } from '@/services/api';
+import { toast } from '@/components/ui/use-toast';
 
 interface AuthContextType {
   user: User | null;
@@ -37,14 +38,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (session) {
           console.log("Found existing session:", session);
-          const currentUser = await getCurrentUser();
-          setUser(currentUser);
+          try {
+            const currentUser = await getCurrentUser();
+            console.log("User data retrieved:", currentUser);
+            setUser(currentUser);
+          } catch (userError) {
+            console.error('Error getting user data:', userError);
+            // Don't clear user here - session exists but user data fetch failed
+          }
         } else {
           console.log("No active session found");
           setUser(null);
         }
       } catch (error) {
-        console.error('Error getting current user:', error);
+        console.error('Error checking session:', error);
         setUser(null);
       } finally {
         setIsLoading(false);
@@ -64,10 +71,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(currentUser);
         } catch (error) {
           console.error('Error getting user data after auth event:', error);
+          toast({
+            title: "Error",
+            description: "There was a problem fetching your profile. Please try refreshing the page.",
+            variant: "destructive",
+          });
+        } finally {
+          setIsLoading(false);
         }
       } else if (event === 'SIGNED_OUT') {
         console.log('User signed out');
         setUser(null);
+        setIsLoading(false);
       }
     });
 
