@@ -172,9 +172,26 @@ export const createCommunity = async (
   community: Omit<DatabaseCommunity, "id" | "created_at" | "updated_at">
 ): Promise<Community> => {
   try {
+    // Transform data to match database schema
+    const dbCommunity = {
+      name: community.name,
+      description: community.description,
+      goal: community.goal,
+      goal_amount: community.goal_amount,
+      goal_rationale: community.goal_rationale,
+      category: community.category,
+      tags: community.tags,
+      deadline: community.deadline,
+      start_date: community.start_date,
+      visibility: community.visibility,
+      status: community.status || 'pending',
+      creator_id: community.creator_id,
+      staking_amount: community.staking_amount
+    };
+
     const { data, error } = await supabase
       .from("communities")
-      .insert(community)
+      .insert(dbCommunity)
       .select("*")
       .single();
 

@@ -15,12 +15,25 @@ export type CommunityVisibility = 'public' | 'private';
 
 export type CommunityStatus = 'pending' | 'active' | 'completed' | 'failed';
 
+export type CommunityCategory = 
+  | 'education'
+  | 'fitness'
+  | 'career'
+  | 'finance'
+  | 'personal'
+  | 'social'
+  | 'health'
+  | 'other';
+
 export type Community = {
   id: string;
   name: string;
   description: string;
   goal: string;
   goalAmount?: number;
+  goalRationale?: string;
+  category?: CommunityCategory;
+  tags?: string[];
   deadline: Date;
   startDate: Date;
   createdAt: Date;
@@ -113,6 +126,9 @@ export type DatabaseCommunity = {
   description: string;
   goal: string;
   goal_amount?: number;
+  goal_rationale?: string;
+  category?: string;
+  tags?: string[];
   deadline: string;
   start_date: string;
   visibility: CommunityVisibility;
@@ -165,6 +181,9 @@ export const mapDatabaseCommunityToCommunity = (
   description: dbCommunity.description,
   goal: dbCommunity.goal,
   goalAmount: dbCommunity.goal_amount,
+  goalRationale: dbCommunity.goal_rationale,
+  category: dbCommunity.category as CommunityCategory | undefined,
+  tags: dbCommunity.tags,
   deadline: new Date(dbCommunity.deadline),
   startDate: new Date(dbCommunity.start_date),
   createdAt: new Date(dbCommunity.created_at),
