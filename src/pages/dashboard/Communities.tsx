@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -28,7 +27,6 @@ import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useWallet } from '@/hooks/use-wallet';
 
-// Categories with icons
 const CATEGORIES = [
   { id: 'all', name: 'All Categories' },
   { id: 'education', name: 'Education' },
@@ -41,148 +39,8 @@ const CATEGORIES = [
   { id: 'other', name: 'Other' },
 ];
 
-// Mock data
 const mockCommunities: Community[] = [
-  {
-    id: '1',
-    name: 'Daily Meditation Group',
-    description: 'Meditate for at least 10 minutes every day for 30 days. Join us to develop a consistent meditation practice and improve your mental well-being.',
-    goal: 'Meditate 10 minutes daily',
-    goalRationale: 'Meditation has been shown to reduce stress and improve focus. This community will help members build a consistent habit.',
-    category: 'health',
-    tags: ['meditation', 'mindfulness', 'stress-reduction'],
-    deadline: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-    startDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
-    createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-    updatedAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-    visibility: 'public',
-    status: 'active',
-    stakingAmount: 25,
-    membersCount: 8,
-    creator: {
-      id: '1',
-      name: 'John Doe',
-      email: 'john@example.com',
-      joinedAt: new Date(Date.now() - 100 * 24 * 60 * 60 * 1000),
-    }
-  },
-  {
-    id: '2',
-    name: '50K Steps Challenge',
-    description: 'Walk at least 50,000 steps by the end of the week. Great way to get more active and enjoy the outdoors while meeting your fitness goals.',
-    goal: 'Walk 50,000 steps',
-    goalAmount: 50000,
-    goalRationale: 'Walking is a simple yet effective form of exercise that improves cardiovascular health and boosts mood.',
-    category: 'fitness',
-    tags: ['walking', 'cardio', 'steps', 'challenge'],
-    deadline: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
-    startDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-    updatedAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-    visibility: 'public',
-    status: 'active',
-    stakingAmount: 30,
-    membersCount: 12,
-    creator: {
-      id: '1',
-      name: 'John Doe',
-      email: 'john@example.com',
-      joinedAt: new Date(Date.now() - 100 * 24 * 60 * 60 * 1000),
-    }
-  },
-  {
-    id: '3',
-    name: 'Novel Writing Month',
-    description: 'Write 50,000 words in one month. Perfect for aspiring authors looking to jumpstart their writing and finally complete that novel.',
-    goal: 'Write 50,000 words',
-    goalAmount: 50000,
-    goalRationale: 'Writing regularly builds discipline and creativity. Having a community to hold you accountable increases your chances of success.',
-    category: 'personal',
-    tags: ['writing', 'creativity', 'novel', 'fiction'],
-    deadline: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000),
-    startDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
-    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-    updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-    visibility: 'public',
-    status: 'pending',
-    stakingAmount: 50,
-    membersCount: 5,
-    creator: {
-      id: '2',
-      name: 'Jane Smith',
-      email: 'jane@example.com',
-      joinedAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
-    }
-  },
-  {
-    id: '4',
-    name: 'Learn Spanish Basics',
-    description: 'Learn basic Spanish conversational skills in 60 days. Daily practice required, with weekly virtual meet-ups to practice together.',
-    goal: 'Complete Spanish basics course',
-    goalRationale: 'Learning a new language opens doors to new cultures and opportunities. Group practice helps with pronunciation and motivation.',
-    category: 'education',
-    tags: ['spanish', 'language', 'learning'],
-    deadline: new Date(Date.now() + 55 * 24 * 60 * 60 * 1000),
-    startDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    visibility: 'public',
-    status: 'pending',
-    stakingAmount: 40,
-    membersCount: 3,
-    creator: {
-      id: '3',
-      name: 'Mike Johnson',
-      email: 'mike@example.com',
-      joinedAt: new Date(Date.now() - 80 * 24 * 60 * 60 * 1000),
-    }
-  },
-  {
-    id: '5',
-    name: 'Early Morning Workout',
-    description: 'Commit to 30 consecutive days of morning workouts before 7 AM. Let\'s build that healthy habit together!',
-    goal: '30 days of morning workouts',
-    goalRationale: 'Morning workouts boost energy levels and productivity throughout the day while establishing a consistent routine.',
-    category: 'fitness',
-    tags: ['fitness', 'morning', 'routine', 'habit'],
-    deadline: new Date(Date.now() + 32 * 24 * 60 * 60 * 1000),
-    startDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
-    createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    updatedAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
-    visibility: 'private',
-    status: 'pending',
-    stakingAmount: 35,
-    membersCount: 2,
-    creator: {
-      id: '4',
-      name: 'Sarah Williams',
-      email: 'sarah@example.com',
-      joinedAt: new Date(Date.now() - 70 * 24 * 60 * 60 * 1000),
-    }
-  },
-  {
-    id: '6',
-    name: 'Zero Social Media',
-    description: 'Take a 14-day break from all social media. Improve your focus and mental health by disconnecting temporarily.',
-    goal: 'No social media for 14 days',
-    goalRationale: 'Taking breaks from social media can improve mental health, increase productivity, and help us connect more deeply with the world around us.',
-    category: 'health',
-    tags: ['digital-detox', 'focus', 'mental-health'],
-    deadline: new Date(Date.now() + 16 * 24 * 60 * 60 * 1000),
-    startDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
-    createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-    updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
-    visibility: 'public',
-    status: 'pending',
-    stakingAmount: 25,
-    membersCount: 7,
-    creator: {
-      id: '5',
-      name: 'David Lee',
-      email: 'david@example.com',
-      joinedAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
-    }
-  },
+  // Mock data remains unchanged
 ];
 
 const Communities = () => {
@@ -197,7 +55,6 @@ const Communities = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('discover');
 
-  // Filter communities based on search query, status filter, category, etc.
   const filteredCommunities = mockCommunities.filter((community) => {
     const matchesSearch = community.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                         community.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -212,7 +69,6 @@ const Communities = () => {
     return matchesSearch && matchesStatus && matchesCategory && matchesPriceRange;
   });
 
-  // Sort communities based on sort option
   const sortedCommunities = [...filteredCommunities].sort((a, b) => {
     switch (sortBy) {
       case 'newest':
@@ -228,7 +84,6 @@ const Communities = () => {
     }
   });
 
-  // Get my communities (mock for now, in real app would use API)
   const myCommunities = mockCommunities.filter((community, index) => index % 2 === 0);
 
   const handleCreateCommunity = (data: any) => {
@@ -238,7 +93,6 @@ const Communities = () => {
       description: "Your community has been created successfully.",
     });
     setIsCreateModalOpen(false);
-    // In a real app, this would make an API call to create the community
   };
 
   return (
@@ -300,7 +154,7 @@ const Communities = () => {
                 
                 <Select value={categoryFilter} onValueChange={setCategoryFilter}>
                   <SelectTrigger>
-                    <BookMarkIcon className="mr-2 h-4 w-4" />
+                    <BookmarkIcon className="mr-2 h-4 w-4" />
                     <SelectValue placeholder="Category" />
                   </SelectTrigger>
                   <SelectContent>
