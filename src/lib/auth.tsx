@@ -29,29 +29,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Debug auth status
+  const debugAuth = (message: string, data?: any) => {
+    console.log(`Auth Debug [${new Date().toISOString()}]: ${message}`, data || '');
+  };
+
   useEffect(() => {
     const checkUser = async () => {
       setIsLoading(true);
+      debugAuth('Checking user session');
+      
       try {
         // Check for existing session
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session) {
-          console.log("Found existing session:", session);
+          debugAuth('Found existing session', { 
+            userId: session.user.id, 
+            expiresAt: session.expires_at 
+          });
+          
           try {
             const currentUser = await getCurrentUser();
-            console.log("User data retrieved:", currentUser);
+            debugAuth('User data retrieved', currentUser);
             setUser(currentUser);
           } catch (userError) {
-            console.error('Error getting user data:', userError);
+            debugAuth('Error getting user data', userError);
             // Don't clear user here - session exists but user data fetch failed
           }
         } else {
-          console.log("No active session found");
+          debugAuth('No active session found');
           setUser(null);
         }
       } catch (error) {
-        console.error('Error checking session:', error);
+        debugAuth('Error checking session', error);
         setUser(null);
       } finally {
         setIsLoading(false);
@@ -62,15 +73,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Subscribe to auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session ? 'session exists' : 'no session');
+      debugAuth(`Auth state changed: ${event}`, { 
+        hasSession: session ? true : false,
+        userId: session?.user?.id 
+      });
       
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         try {
           const currentUser = await getCurrentUser();
-          console.log('User data retrieved after auth event:', currentUser);
+          debugAuth('User data retrieved after auth event', currentUser);
           setUser(currentUser);
         } catch (error) {
-          console.error('Error getting user data after auth event:', error);
+          debugAuth('Error getting user data after auth event', error);
           toast({
             title: "Error",
             description: "There was a problem fetching your profile. Please try refreshing the page.",
@@ -80,24 +94,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setIsLoading(false);
         }
       } else if (event === 'SIGNED_OUT') {
-        console.log('User signed out');
+        debugAuth('User signed out');
         setUser(null);
         setIsLoading(false);
       }
     });
 
     return () => {
+      debugAuth('Cleaning up auth listener');
       authListener.subscription.unsubscribe();
     };
   }, []);
 
   const signIn = async (email: string, password: string) => {
     setIsLoading(true);
+    debugAuth('Attempting sign in', { email });
+    
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      
+      if (error) {
+        debugAuth('Sign in error', error);
+      } else {
+        debugAuth('Sign in successful', { 
+          userId: data.user?.id,
+          sessionExpiresAt: data.session?.expires_at
+        });
+      }
+      
       return { error };
     } catch (error) {
-      console.error('Error signing in:', error);
+      debugAuth('Exception during sign in', error);
       return { error };
     } finally {
       setIsLoading(false);
@@ -106,6 +133,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, meta?: { [key: string]: any }) => {
     setIsLoading(true);
+    debugAuth('Attempting sign up', { email, meta });
+    
     try {
       const { error } = await supabase.auth.signUp({
         email,
@@ -114,9 +143,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           data: meta
         }
       });
+      
+      if (error) {
+        debugAuth('Sign up error', error);
+      } else {
+        debugAuth('Sign up successful');
+      }
+      
       return { error };
     } catch (error) {
-      console.error('Error signing up:', error);
+      debugAuth('Exception during sign up', error);
       return { error };
     } finally {
       setIsLoading(false);
@@ -124,24 +160,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const resetPassword = async (email: string) => {
+    debugAuth('Attempting password reset', { email });
+    
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
+      
+      if (error) {
+        debugAuth('Password reset error', error);
+      } else {
+        debugAuth('Password reset email sent');
+      }
+      
       return { error };
     } catch (error) {
-      console.error('Error resetting password:', error);
+      debugAuth('Exception during password reset', error);
       return { error };
     }
   };
 
   const signOut = async () => {
     setIsLoading(true);
+    debugAuth('Attempting sign out');
+    
     try {
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        debugAuth('Sign out error', error);
+      } else {
+        debugAuth('Sign out successful');
+      }
       setUser(null);
     } catch (error) {
-      console.error('Error signing out:', error);
+      debugAuth('Exception during sign out', error);
     } finally {
       setIsLoading(false);
     }

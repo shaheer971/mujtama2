@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -28,6 +28,7 @@ import { useAuth } from '@/lib/auth';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import Container from '@/components/ui/Container';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
@@ -38,17 +39,28 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { signIn, user } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+  const { signIn, user, isLoading: authLoading, isAuthenticated } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Debug login component
+  useEffect(() => {
+    console.log('Login page rendered with auth state:', { 
+      user: user?.id || null, 
+      isAuthenticated, 
+      authLoading 
+    });
+  }, [user, isAuthenticated, authLoading]);
 
   // Redirect if user is already logged in
-  React.useEffect(() => {
-    if (user) {
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      console.log('User is authenticated, redirecting to dashboard');
       navigate('/dashboard');
     }
-  }, [user, navigate]);
+  }, [isAuthenticated, user, navigate]);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -59,24 +71,38 @@ const Login = () => {
   });
 
   const onSubmit = async (data: LoginFormValues) => {
-    setIsLoading(true);
+    setIsSubmitting(true);
+    setFormError(null);
+    
     try {
+      console.log('Attempting login with email:', data.email);
       const { error } = await signIn(data.email, data.password);
+      
       if (error) {
+        console.error('Login error:', error);
+        setFormError(error.message || 'Failed to sign in. Please check your credentials.');
         toast({
           title: 'Login failed',
-          description: error.message,
+          description: error.message || 'Failed to sign in',
           variant: 'destructive',
+        });
+      } else {
+        console.log('Login successful, user should be redirected');
+        toast({
+          title: 'Welcome back!',
+          description: 'You have successfully signed in',
         });
       }
     } catch (error: any) {
+      console.error('Exception during login:', error);
+      setFormError(error.message || 'An unexpected error occurred');
       toast({
         title: 'Login failed',
         description: error.message || 'An unexpected error occurred',
         variant: 'destructive',
       });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -97,6 +123,11 @@ const Login = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {formError && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertDescription>{formError}</AlertDescription>
+                </Alert>
+              )}
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <FormField
@@ -106,7 +137,12 @@ const Login = () => {
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input placeholder="email@example.com" {...field} />
+                          <Input 
+                            placeholder="email@example.com" 
+                            type="email"
+                            autoComplete="email"
+                            {...field} 
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -123,6 +159,7 @@ const Login = () => {
                             <Input
                               type={showPassword ? 'text' : 'password'}
                               placeholder="Enter your password"
+                              autoComplete="current-password"
                               {...field}
                             />
                             <Button
@@ -147,8 +184,8 @@ const Login = () => {
                       </FormItem>
                     )}
                   />
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? (
+                  <Button type="submit" className="w-full" disabled={isSubmitting || authLoading}>
+                    {isSubmitting || authLoading ? (
                       <div className="flex items-center">
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                         <span>Signing in...</span>

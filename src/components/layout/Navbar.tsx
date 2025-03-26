@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/lib/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { toast } from '@/components/ui/use-toast';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -28,22 +29,45 @@ const Navbar = () => {
     { name: 'How It Works', path: '/#how-it-works' },
   ];
 
-  // Debug auth state more thoroughly
   useEffect(() => {
-    console.log("Auth state in Navbar (detailed):", { 
-      user, 
-      isLoading, 
+    // Detailed debugging for Navbar authentication state
+    console.log('Navbar render details:', {
       isAuthenticated,
-      userObject: user ? JSON.stringify(user) : null,
-      location: location.pathname
+      userExists: !!user,
+      userId: user?.id,
+      isLoading,
+      location: location.pathname,
+      timestamp: new Date().toISOString()
     });
+    
+    if (user) {
+      console.log('User object details:', {
+        id: user.id,
+        email: user.email,
+        name: user.name || '(no name)',
+        avatar: user.avatar || '(no avatar)'
+      });
+    }
   }, [user, isLoading, isAuthenticated, location.pathname]);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
+    try {
+      await signOut();
+      toast({
+        title: "Signed out",
+        description: "You have been successfully signed out"
+      });
+      navigate('/');
+    } catch (error) {
+      console.error('Sign out error:', error);
+      toast({
+        title: "Error",
+        description: "There was a problem signing out",
+        variant: "destructive"
+      });
+    }
   };
 
   const getInitials = (name: string) => {
@@ -60,6 +84,86 @@ const Navbar = () => {
                      location.pathname === '/signup' || 
                      location.pathname === '/forgot-password' ||
                      location.pathname === '/reset-password';
+
+  // Force rendering of auth state for debugging
+  const renderAuthState = () => {
+    if (isLoading) {
+      return (
+        <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
+      );
+    }
+    
+    if (isAuthenticated && user) {
+      return (
+        <>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <Bell className="h-5 w-5" />
+                <span className="sr-only">Notifications</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-[300px]">
+              <DropdownMenuLabel>Notifications</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <div className="py-2 px-4 text-sm text-muted-foreground">
+                No new notifications
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="secondary" size="sm" className="gap-2 ml-4">
+                <Avatar className="h-6 w-6">
+                  <AvatarImage src={user?.avatar} />
+                  <AvatarFallback>
+                    {getInitials(user?.name || user?.email || '')}
+                  </AvatarFallback>
+                </Avatar>
+                <span className="max-w-[100px] truncate">
+                  {user?.name || user?.email?.split('@')[0] || 'User'}
+                </span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="z-50 bg-popover">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/dashboard">Dashboard</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/dashboard/profile">Profile</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/dashboard/settings">Settings</Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleSignOut}>
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </>
+      );
+    }
+    
+    if (!isAuthPage) {
+      return (
+        <>
+          <Button variant="outline" asChild>
+            <Link to="/login">Sign In</Link>
+          </Button>
+          <Button asChild>
+            <Link to="/signup">Get Started</Link>
+          </Button>
+        </>
+      );
+    }
+    
+    return null;
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
@@ -102,70 +206,7 @@ const Navbar = () => {
               <span className="sr-only">Search</span>
             </Button>
             
-            {isLoading ? (
-              <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
-            ) : isAuthenticated ? (
-              <>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="rounded-full">
-                      <Bell className="h-5 w-5" />
-                      <span className="sr-only">Notifications</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-[300px]">
-                    <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <div className="py-2 px-4 text-sm text-muted-foreground">
-                      No new notifications
-                    </div>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="secondary" size="sm" className="gap-2 ml-4">
-                      <Avatar className="h-6 w-6">
-                        <AvatarImage src={user?.avatar} />
-                        <AvatarFallback>
-                          {getInitials(user?.name || user?.email || '')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="max-w-[100px] truncate">
-                        {user?.name || user?.email?.split('@')[0] || 'User'}
-                      </span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="z-50 bg-popover">
-                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link to="/dashboard">Dashboard</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/dashboard/profile">Profile</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link to="/dashboard/settings">Settings</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleSignOut}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Sign Out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            ) : !isAuthPage ? (
-              <>
-                <Button variant="outline" asChild>
-                  <Link to="/login">Sign In</Link>
-                </Button>
-                <Button asChild>
-                  <Link to="/signup">Get Started</Link>
-                </Button>
-              </>
-            ) : null}
+            {renderAuthState()}
           </div>
 
           <div className="md:hidden flex items-center gap-2">
@@ -219,7 +260,7 @@ const Navbar = () => {
               </Link>
             )}
             <div className="pt-4 border-t space-y-2">
-              {isAuthenticated ? (
+              {isAuthenticated && user ? (
                 <>
                   <div className="flex items-center gap-2 mb-2">
                     <Avatar className="h-8 w-8">
@@ -253,6 +294,15 @@ const Navbar = () => {
               ) : null}
             </div>
           </nav>
+        </div>
+      )}
+      
+      {/* Debug information for development */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="hidden">
+          Auth State: {isAuthenticated ? 'Authenticated' : 'Not Authenticated'}, 
+          Loading: {isLoading ? 'Yes' : 'No'}, 
+          User: {user ? user.email : 'None'}
         </div>
       )}
     </header>
