@@ -36,13 +36,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     debugAuth('Auth provider mounted');
+    let authListener: { subscription: { unsubscribe: () => void } } | null = null;
     
-    const checkUser = async () => {
+    const initializeAuth = async () => {
       setIsLoading(true);
-      debugAuth('Checking user session');
+      debugAuth('Initializing auth');
       
       try {
-        // Check for existing session
+        // Set up auth state listener first
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+          debugAuth(`Auth state changed: ${event}`, { 
+            hasSession: session ? true : false,
+            userId: session?.user?.id 
+          });
+          
+          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            try {
+              debugAuth('User signed in or token refreshed, fetching user data');
+              const currentUser = await getCurrentUser();
+              debugAuth('User data retrieved after auth event', currentUser);
+              setUser(currentUser);
+              setIsLoading(false);
+            } catch (error) {
+              debugAuth('Error getting user data after auth event', error);
+              setUser(null);
+              setIsLoading(false);
+              toast({
+                title: "Error",
+                description: "There was a problem fetching your profile. Please try refreshing the page.",
+                variant: "destructive",
+              });
+            }
+          } else if (event === 'SIGNED_OUT') {
+            debugAuth('User signed out');
+            setUser(null);
+            setIsLoading(false);
+          }
+        });
+        
+        authListener = { subscription };
+        
+        // Then check for existing session
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session) {
@@ -53,10 +87,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           try {
             const currentUser = await getCurrentUser();
-            debugAuth('User data retrieved', currentUser);
+            debugAuth('User data retrieved for existing session', currentUser);
             setUser(currentUser);
           } catch (userError) {
-            debugAuth('Error getting user data', userError);
+            debugAuth('Error getting user data for existing session', userError);
             setUser(null);
           }
         } else {
@@ -64,50 +98,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(null);
         }
       } catch (error) {
-        debugAuth('Error checking session', error);
+        debugAuth('Error during auth initialization', error);
         setUser(null);
       } finally {
         setIsLoading(false);
       }
     };
 
-    // Set up auth state listener before checking session
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      debugAuth(`Auth state changed: ${event}`, { 
-        hasSession: session ? true : false,
-        userId: session?.user?.id 
-      });
-      
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        try {
-          setIsLoading(true);
-          const currentUser = await getCurrentUser();
-          debugAuth('User data retrieved after auth event', currentUser);
-          setUser(currentUser);
-        } catch (error) {
-          debugAuth('Error getting user data after auth event', error);
-          toast({
-            title: "Error",
-            description: "There was a problem fetching your profile. Please try refreshing the page.",
-            variant: "destructive",
-          });
-          setUser(null);
-        } finally {
-          setIsLoading(false);
-        }
-      } else if (event === 'SIGNED_OUT') {
-        debugAuth('User signed out');
-        setUser(null);
-        setIsLoading(false);
-      }
-    });
-
-    // Then check the session
-    checkUser();
+    initializeAuth();
 
     return () => {
       debugAuth('Cleaning up auth listener');
-      authListener.subscription.unsubscribe();
+      if (authListener) {
+        authListener.subscription.unsubscribe();
+      }
     };
   }, []);
 
@@ -120,16 +124,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) {
         debugAuth('Sign in error', error);
+        toast({
+          title: "Sign in failed",
+          description: error.message,
+          variant: "destructive",
+        });
       } else {
         debugAuth('Sign in successful', { 
           userId: data.user?.id,
           sessionExpiresAt: data.session?.expires_at
+        });
+        toast({
+          title: "Welcome back!",
+          description: "You have successfully signed in.",
         });
       }
       
       return { error };
     } catch (error) {
       debugAuth('Exception during sign in', error);
+      toast({
+        title: "Sign in failed",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
       return { error };
     } finally {
       setIsLoading(false);
@@ -151,13 +169,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) {
         debugAuth('Sign up error', error);
+        toast({
+          title: "Sign up failed",
+          description: error.message,
+          variant: "destructive",
+        });
       } else {
         debugAuth('Sign up successful');
+        toast({
+          title: "Account created",
+          description: "Your account has been created successfully.",
+        });
       }
       
       return { error };
     } catch (error) {
       debugAuth('Exception during sign up', error);
+      toast({
+        title: "Sign up failed",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
       return { error };
     } finally {
       setIsLoading(false);
@@ -174,13 +206,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) {
         debugAuth('Password reset error', error);
+        toast({
+          title: "Password reset failed",
+          description: error.message,
+          variant: "destructive",
+        });
       } else {
         debugAuth('Password reset email sent');
+        toast({
+          title: "Password reset initiated",
+          description: "Check your email for instructions",
+        });
       }
       
       return { error };
     } catch (error) {
       debugAuth('Exception during password reset', error);
+      toast({
+        title: "Password reset failed",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
       return { error };
     }
   };
@@ -193,12 +239,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { error } = await supabase.auth.signOut();
       if (error) {
         debugAuth('Sign out error', error);
+        toast({
+          title: "Sign out failed",
+          description: error.message,
+          variant: "destructive",
+        });
       } else {
         debugAuth('Sign out successful');
+        toast({
+          title: "Signed out",
+          description: "You have been signed out successfully",
+        });
+        setUser(null);
       }
-      setUser(null);
     } catch (error) {
       debugAuth('Exception during sign out', error);
+      toast({
+        title: "Sign out failed",
+        description: "An unexpected error occurred",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }

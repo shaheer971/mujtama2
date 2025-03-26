@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -24,14 +24,12 @@ const Navbar = () => {
   const { toast } = useToast();
 
   // Debug navbar render
-  useEffect(() => {
-    console.log('Navbar rendering with auth state:', { 
-      isAuthenticated, 
-      user: user?.id || null, 
-      isLoading,
-      path: location.pathname
-    });
-  }, [isAuthenticated, user, isLoading, location.pathname]);
+  console.log('Navbar rendering with auth state:', { 
+    isAuthenticated, 
+    userId: user?.id || null, 
+    isLoading,
+    path: location.pathname
+  });
 
   const navLinks = [
     { name: 'Home', path: '/' },
@@ -43,21 +41,8 @@ const Navbar = () => {
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   const handleSignOut = async () => {
-    try {
-      await signOut();
-      toast({
-        title: "Signed out",
-        description: "You have been successfully signed out"
-      });
-      navigate('/');
-    } catch (error) {
-      console.error('Sign out error:', error);
-      toast({
-        title: "Error",
-        description: "There was a problem signing out",
-        variant: "destructive"
-      });
-    }
+    await signOut();
+    navigate('/');
   };
 
   const getInitials = (name: string) => {
@@ -116,13 +101,13 @@ const Navbar = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="secondary" size="sm" className="gap-2 ml-4">
                     <Avatar className="h-6 w-6">
-                      <AvatarImage src={user?.avatar} />
+                      <AvatarImage src={user?.avatar_url} />
                       <AvatarFallback>
-                        {getInitials(user?.name || user?.email || '')}
+                        {getInitials(user?.full_name || user?.email || '')}
                       </AvatarFallback>
                     </Avatar>
                     <span className="max-w-[100px] truncate">
-                      {user?.name || user?.email?.split('@')[0] || 'User'}
+                      {user?.full_name || user?.email?.split('@')[0] || 'User'}
                     </span>
                   </Button>
                 </DropdownMenuTrigger>
@@ -144,16 +129,18 @@ const Navbar = () => {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            ) : !isAuthPage ? (
-              <>
-                <Button variant="outline" asChild>
-                  <Link to="/login">Sign In</Link>
-                </Button>
-                <Button asChild>
-                  <Link to="/signup">Get Started</Link>
-                </Button>
-              </>
-            ) : null}
+            ) : (
+              !isAuthPage && (
+                <>
+                  <Button variant="outline" asChild>
+                    <Link to="/login">Sign In</Link>
+                  </Button>
+                  <Button asChild>
+                    <Link to="/signup">Get Started</Link>
+                  </Button>
+                </>
+              )
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -205,12 +192,12 @@ const Navbar = () => {
                 <>
                   <div className="flex items-center gap-2 mb-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={user?.avatar} />
+                      <AvatarImage src={user?.avatar_url} />
                       <AvatarFallback>
-                        {getInitials(user?.name || user?.email || '')}
+                        {getInitials(user?.full_name || user?.email || '')}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="font-medium">{user?.name || user?.email?.split('@')[0] || 'User'}</span>
+                    <span className="font-medium">{user?.full_name || user?.email?.split('@')[0] || 'User'}</span>
                   </div>
                   <Button className="w-full" asChild onClick={() => setIsMenuOpen(false)}>
                     <Link to="/dashboard">My Dashboard</Link>
@@ -222,16 +209,18 @@ const Navbar = () => {
                     Sign Out
                   </Button>
                 </>
-              ) : !isAuthPage ? (
-                <>
-                  <Button variant="outline" className="w-full" asChild onClick={() => setIsMenuOpen(false)}>
-                    <Link to="/login">Sign In</Link>
-                  </Button>
-                  <Button className="w-full" asChild onClick={() => setIsMenuOpen(false)}>
-                    <Link to="/signup">Get Started</Link>
-                  </Button>
-                </>
-              ) : null}
+              ) : (
+                !isAuthPage && (
+                  <>
+                    <Button variant="outline" className="w-full" asChild onClick={() => setIsMenuOpen(false)}>
+                      <Link to="/login">Sign In</Link>
+                    </Button>
+                    <Button className="w-full" asChild onClick={() => setIsMenuOpen(false)}>
+                      <Link to="/signup">Get Started</Link>
+                    </Button>
+                  </>
+                )
+              )}
             </div>
           </nav>
         </div>

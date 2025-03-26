@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -29,6 +29,7 @@ import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import Container from '@/components/ui/Container';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const signupSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
@@ -43,17 +44,25 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 
 const Signup = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { signUp, user } = useAuth();
+  const { signUp, user, isAuthenticated } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
+  // Debug logging
+  console.log('Signup page mounted with auth state:', { 
+    isAuthenticated, 
+    userId: user?.id || null
+  });
+
   // Redirect if user is already logged in
-  React.useEffect(() => {
-    if (user) {
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      console.log('User is already authenticated, redirecting to dashboard');
       navigate('/dashboard');
     }
-  }, [user, navigate]);
+  }, [user, navigate, isAuthenticated]);
 
   const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
@@ -67,24 +76,33 @@ const Signup = () => {
 
   const onSubmit = async (data: SignupFormValues) => {
     setIsLoading(true);
+    setFormError(null);
+    
     try {
+      console.log('Attempting signup with:', { email: data.email, fullName: data.fullName });
       const { error } = await signUp(data.email, data.password, {
         full_name: data.fullName,
       });
       
       if (error) {
+        console.error('Signup error:', error);
+        setFormError(error.message || 'Failed to create account. Please try again.');
         toast({
           title: 'Sign up failed',
           description: error.message,
           variant: 'destructive',
         });
       } else {
+        console.log('Signup successful, navigating to dashboard');
         toast({
           title: 'Account created',
-          description: 'Please check your email for verification instructions.',
+          description: 'Your account has been created successfully.',
         });
+        navigate('/dashboard');
       }
     } catch (error: any) {
+      console.error('Exception during signup:', error);
+      setFormError(error.message || 'An unexpected error occurred');
       toast({
         title: 'Sign up failed',
         description: error.message || 'An unexpected error occurred',
@@ -112,6 +130,11 @@ const Signup = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
+              {formError && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertDescription>{formError}</AlertDescription>
+                </Alert>
+              )}
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <FormField
@@ -135,7 +158,7 @@ const Signup = () => {
                       <FormItem>
                         <FormLabel>Email</FormLabel>
                         <FormControl>
-                          <Input placeholder="email@example.com" {...field} />
+                          <Input placeholder="email@example.com" type="email" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

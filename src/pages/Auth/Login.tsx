@@ -46,13 +46,13 @@ const Login = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Debug logging
-  useEffect(() => {
-    console.log('Login page mounted with auth state:', { 
-      isAuthenticated, 
-      userId: user?.id || null, 
-      authLoading 
-    });
+  console.log('Login page mounted with auth state:', { 
+    isAuthenticated, 
+    userId: user?.id || null, 
+    authLoading 
+  });
 
+  useEffect(() => {
     if (isAuthenticated && user) {
       console.log('User is authenticated, redirecting to dashboard');
       navigate('/dashboard');
@@ -80,27 +80,13 @@ const Login = () => {
       if (error) {
         console.error('Login error:', error);
         setFormError(error.message || 'Failed to sign in. Please check your credentials.');
-        toast({
-          title: 'Login failed',
-          description: error.message || 'Failed to sign in',
-          variant: 'destructive',
-        });
       } else {
-        console.log('Login successful');
-        toast({
-          title: 'Welcome back!',
-          description: 'You have successfully signed in',
-        });
+        console.log('Login successful, redirecting to dashboard');
         navigate('/dashboard');
       }
     } catch (error: any) {
       console.error('Exception during login:', error);
       setFormError(error.message || 'An unexpected error occurred');
-      toast({
-        title: 'Login failed',
-        description: error.message || 'An unexpected error occurred',
-        variant: 'destructive',
-      });
     } finally {
       setIsSubmitting(false);
     }
