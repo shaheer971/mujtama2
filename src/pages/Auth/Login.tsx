@@ -45,23 +45,21 @@ const Login = () => {
   const { signIn, user, isLoading: authLoading, isAuthenticated } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Debug login component
+  // Debug logging
   useEffect(() => {
-    console.log('Login page rendered with auth state:', { 
-      user: user?.id || null, 
+    console.log('Login page mounted with auth state:', { 
       isAuthenticated, 
+      userId: user?.id || null, 
       authLoading 
     });
-  }, [user, isAuthenticated, authLoading]);
 
-  // Redirect if user is already logged in
-  useEffect(() => {
     if (isAuthenticated && user) {
       console.log('User is authenticated, redirecting to dashboard');
       navigate('/dashboard');
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [isAuthenticated, user, navigate, authLoading]);
 
+  // Form setup
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -70,6 +68,7 @@ const Login = () => {
     },
   });
 
+  // Form submission handler
   const onSubmit = async (data: LoginFormValues) => {
     setIsSubmitting(true);
     setFormError(null);
@@ -87,11 +86,12 @@ const Login = () => {
           variant: 'destructive',
         });
       } else {
-        console.log('Login successful, user should be redirected');
+        console.log('Login successful');
         toast({
           title: 'Welcome back!',
           description: 'You have successfully signed in',
         });
+        navigate('/dashboard');
       }
     } catch (error: any) {
       console.error('Exception during login:', error);
@@ -106,14 +106,12 @@ const Login = () => {
     }
   };
 
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
+  const togglePasswordVisibility = () => setShowPassword(!showPassword);
 
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
-      <main className="flex-grow flex items-center justify-center py-12">
+      <main className="flex-grow flex items-center justify-center py-12 pt-24">
         <Container maxWidth="md">
           <Card className="w-full max-w-md mx-auto">
             <CardHeader className="space-y-1">

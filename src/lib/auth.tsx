@@ -29,12 +29,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Debug auth status
+  // Debug auth status - include timestamps for better debugging
   const debugAuth = (message: string, data?: any) => {
     console.log(`Auth Debug [${new Date().toISOString()}]: ${message}`, data || '');
   };
 
   useEffect(() => {
+    debugAuth('Auth provider mounted');
+    
     const checkUser = async () => {
       setIsLoading(true);
       debugAuth('Checking user session');
@@ -55,7 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(currentUser);
           } catch (userError) {
             debugAuth('Error getting user data', userError);
-            // Don't clear user here - session exists but user data fetch failed
+            setUser(null);
           }
         } else {
           debugAuth('No active session found');
@@ -69,9 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
-    checkUser();
-
-    // Subscribe to auth changes
+    // Set up auth state listener before checking session
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       debugAuth(`Auth state changed: ${event}`, { 
         hasSession: session ? true : false,
@@ -80,6 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         try {
+          setIsLoading(true);
           const currentUser = await getCurrentUser();
           debugAuth('User data retrieved after auth event', currentUser);
           setUser(currentUser);
@@ -90,6 +91,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             description: "There was a problem fetching your profile. Please try refreshing the page.",
             variant: "destructive",
           });
+          setUser(null);
         } finally {
           setIsLoading(false);
         }
@@ -99,6 +101,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setIsLoading(false);
       }
     });
+
+    // Then check the session
+    checkUser();
 
     return () => {
       debugAuth('Cleaning up auth listener');

@@ -1,9 +1,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Bell, Menu, Search, X, LogOut } from 'lucide-react';
+import { Menu, X, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Container from '@/components/ui/Container';
+import { useAuth } from '@/lib/auth';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,43 +14,31 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useAuth } from '@/lib/auth';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { toast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, signOut, isLoading, isAuthenticated } = useAuth();
-  
+  const { user, signOut, isAuthenticated, isLoading } = useAuth();
+  const { toast } = useToast();
+
+  // Debug navbar render
+  useEffect(() => {
+    console.log('Navbar rendering with auth state:', { 
+      isAuthenticated, 
+      user: user?.id || null, 
+      isLoading,
+      path: location.pathname
+    });
+  }, [isAuthenticated, user, isLoading, location.pathname]);
+
   const navLinks = [
     { name: 'Home', path: '/' },
     { name: 'Features', path: '/#features' },
     { name: 'Communities', path: '/#communities' },
     { name: 'How It Works', path: '/#how-it-works' },
   ];
-
-  useEffect(() => {
-    // Detailed debugging for Navbar authentication state
-    console.log('Navbar render details:', {
-      isAuthenticated,
-      userExists: !!user,
-      userId: user?.id,
-      isLoading,
-      location: location.pathname,
-      timestamp: new Date().toISOString()
-    });
-    
-    if (user) {
-      console.log('User object details:', {
-        id: user.id,
-        email: user.email,
-        name: user.name || '(no name)',
-        avatar: user.avatar || '(no avatar)'
-      });
-    }
-  }, [user, isLoading, isAuthenticated, location.pathname]);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -84,91 +74,12 @@ const Navbar = () => {
                      location.pathname === '/signup' || 
                      location.pathname === '/forgot-password' ||
                      location.pathname === '/reset-password';
-
-  // Force rendering of auth state for debugging
-  const renderAuthState = () => {
-    if (isLoading) {
-      return (
-        <div className="h-9 w-9 rounded-full bg-muted animate-pulse" />
-      );
-    }
-    
-    if (isAuthenticated && user) {
-      return (
-        <>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-full">
-                <Bell className="h-5 w-5" />
-                <span className="sr-only">Notifications</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-[300px]">
-              <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <div className="py-2 px-4 text-sm text-muted-foreground">
-                No new notifications
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="secondary" size="sm" className="gap-2 ml-4">
-                <Avatar className="h-6 w-6">
-                  <AvatarImage src={user?.avatar} />
-                  <AvatarFallback>
-                    {getInitials(user?.name || user?.email || '')}
-                  </AvatarFallback>
-                </Avatar>
-                <span className="max-w-[100px] truncate">
-                  {user?.name || user?.email?.split('@')[0] || 'User'}
-                </span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="z-50 bg-popover">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to="/dashboard">Dashboard</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/dashboard/profile">Profile</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/dashboard/settings">Settings</Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Sign Out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </>
-      );
-    }
-    
-    if (!isAuthPage) {
-      return (
-        <>
-          <Button variant="outline" asChild>
-            <Link to="/login">Sign In</Link>
-          </Button>
-          <Button asChild>
-            <Link to="/signup">Get Started</Link>
-          </Button>
-        </>
-      );
-    }
-    
-    return null;
-  };
-
+                     
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
       <Container maxWidth="2xl">
         <div className="flex items-center justify-between h-16">
+          {/* Logo */}
           <div className="flex items-center">
             <Link to="/" className="flex items-center gap-2">
               <span className="text-2xl font-bold tracking-tight">مجتمع</span>
@@ -176,6 +87,7 @@ const Navbar = () => {
             </Link>
           </div>
 
+          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-6">
             {navLinks.map((link) => (
               <Link
@@ -190,25 +102,61 @@ const Navbar = () => {
                 {link.name}
               </Link>
             ))}
-            {isAuthenticated && (
-              <Link
-                to="/dashboard"
-                className="font-medium transition-colors hover:text-primary text-muted-foreground"
-              >
-                Dashboard
-              </Link>
-            )}
           </nav>
 
+          {/* Authentication and Search Buttons - Desktop */}
           <div className="hidden md:flex items-center gap-3">
             <Button variant="ghost" size="icon" className="rounded-full">
               <Search className="h-5 w-5" />
               <span className="sr-only">Search</span>
             </Button>
             
-            {renderAuthState()}
+            {isAuthenticated && user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="secondary" size="sm" className="gap-2 ml-4">
+                    <Avatar className="h-6 w-6">
+                      <AvatarImage src={user?.avatar} />
+                      <AvatarFallback>
+                        {getInitials(user?.name || user?.email || '')}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="max-w-[100px] truncate">
+                      {user?.name || user?.email?.split('@')[0] || 'User'}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="z-50 bg-popover">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/dashboard">Dashboard</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/dashboard/profile">Profile</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/dashboard/settings">Settings</Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    Sign Out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : !isAuthPage ? (
+              <>
+                <Button variant="outline" asChild>
+                  <Link to="/login">Sign In</Link>
+                </Button>
+                <Button asChild>
+                  <Link to="/signup">Get Started</Link>
+                </Button>
+              </>
+            ) : null}
           </div>
 
+          {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center gap-2">
             {isAuthenticated && !isLoading && (
               <Button 
@@ -233,6 +181,7 @@ const Navbar = () => {
         </div>
       </Container>
 
+      {/* Mobile Menu */}
       {isMenuOpen && (
         <div className="md:hidden py-4 px-4 bg-background border-b animate-fade-in">
           <nav className="flex flex-col space-y-4">
@@ -250,15 +199,7 @@ const Navbar = () => {
                 {link.name}
               </Link>
             ))}
-            {isAuthenticated && (
-              <Link
-                to="/dashboard"
-                className="py-2 font-medium transition-colors text-muted-foreground"
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Dashboard
-              </Link>
-            )}
+            
             <div className="pt-4 border-t space-y-2">
               {isAuthenticated && user ? (
                 <>
@@ -278,7 +219,6 @@ const Navbar = () => {
                     setIsMenuOpen(false);
                     handleSignOut();
                   }}>
-                    <LogOut className="mr-2 h-4 w-4" />
                     Sign Out
                   </Button>
                 </>
@@ -297,11 +237,11 @@ const Navbar = () => {
         </div>
       )}
       
-      {/* Debug information for development */}
+      {/* Debug information */}
       {process.env.NODE_ENV === 'development' && (
-        <div className="hidden">
-          Auth State: {isAuthenticated ? 'Authenticated' : 'Not Authenticated'}, 
-          Loading: {isLoading ? 'Yes' : 'No'}, 
+        <div className="fixed bottom-0 left-0 bg-black/80 text-white text-xs p-1 z-50">
+          Auth: {isAuthenticated ? 'Yes' : 'No'} | 
+          Loading: {isLoading ? 'Yes' : 'No'} | 
           User: {user ? user.email : 'None'}
         </div>
       )}
