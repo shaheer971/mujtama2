@@ -23,7 +23,6 @@ const Navbar = () => {
   const { user, signOut, isAuthenticated, isLoading } = useAuth();
   const { toast } = useToast();
 
-  // Debug navbar render
   console.log('Navbar rendering with auth state:', { 
     isAuthenticated, 
     userId: user?.id || null, 
@@ -59,6 +58,9 @@ const Navbar = () => {
                      location.pathname === '/signup' || 
                      location.pathname === '/forgot-password' ||
                      location.pathname === '/reset-password';
+
+  const displayName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
+  const avatarUrl = user?.user_metadata?.avatar_url;
                      
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
@@ -101,13 +103,13 @@ const Navbar = () => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="secondary" size="sm" className="gap-2 ml-4">
                     <Avatar className="h-6 w-6">
-                      <AvatarImage src={user?.avatar_url} />
+                      <AvatarImage src={avatarUrl} />
                       <AvatarFallback>
-                        {getInitials(user?.full_name || user?.email || '')}
+                        {getInitials(displayName)}
                       </AvatarFallback>
                     </Avatar>
                     <span className="max-w-[100px] truncate">
-                      {user?.full_name || user?.email?.split('@')[0] || 'User'}
+                      {displayName}
                     </span>
                   </Button>
                 </DropdownMenuTrigger>
@@ -192,12 +194,12 @@ const Navbar = () => {
                 <>
                   <div className="flex items-center gap-2 mb-2">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={user?.avatar_url} />
+                      <AvatarImage src={avatarUrl} />
                       <AvatarFallback>
-                        {getInitials(user?.full_name || user?.email || '')}
+                        {getInitials(displayName)}
                       </AvatarFallback>
                     </Avatar>
-                    <span className="font-medium">{user?.full_name || user?.email?.split('@')[0] || 'User'}</span>
+                    <span className="font-medium">{displayName}</span>
                   </div>
                   <Button className="w-full" asChild onClick={() => setIsMenuOpen(false)}>
                     <Link to="/dashboard">My Dashboard</Link>
@@ -239,3 +241,4 @@ const Navbar = () => {
 };
 
 export default Navbar;
+
